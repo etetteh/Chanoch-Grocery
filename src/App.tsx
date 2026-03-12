@@ -557,7 +557,7 @@ export default function App() {
       <div className="min-h-screen bg-slate-100 dark:bg-[#020617] text-slate-900 dark:text-slate-100 font-sans flex items-center justify-center p-6">
         <div className="max-w-md w-full glass p-8 rounded-3xl border border-slate-200 dark:border-white/10 text-center shadow-2xl">
           <div className="w-20 h-20 brand-gradient rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-brand-500/30">
-            <Key size={36} className="text-white" />
+            <motion.div whileHover={{ scale: 1.2, rotate: 15 }}><Key size={36} className="text-white" /></motion.div>
           </div>
           <h1 className="font-display font-bold text-3xl mb-4 text-gradient">Connect Your Account</h1>
           <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
@@ -567,7 +567,7 @@ export default function App() {
             onClick={handleConnectKey}
             className="w-full brand-gradient text-white font-semibold py-4 px-6 rounded-2xl shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2"
           >
-            <Key size={20} />
+            <motion.div whileHover={{ scale: 1.2, rotate: 15 }}><Key size={20} /></motion.div>
             Connect Google Cloud Account
           </button>
         </div>
@@ -630,7 +630,9 @@ export default function App() {
                 aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
                 className="w-11 h-11 flex items-center justify-center glass rounded-full transition-all text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 border border-slate-300 dark:border-white/10 focus:ring-2 focus:ring-brand-500 outline-none"
               >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                <motion.div initial={false} animate={{ rotate: darkMode ? 180 : 0 }} transition={{ duration: 0.3 }}>
+                  {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                </motion.div>
               </motion.button>
               <motion.button 
                 whileTap={{ scale: 0.9 }}
@@ -678,7 +680,9 @@ export default function App() {
                         {isLocating ? (
                           <Loader2 size={14} className="animate-spin" />
                         ) : (
-                          <MapPin size={14} />
+                          <motion.div animate={{ y: [0, -2, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
+                            <MapPin size={14} />
+                          </motion.div>
                         )}
                       </div>
                       <div className="flex flex-col justify-center">
@@ -694,7 +698,7 @@ export default function App() {
                                  rel="noopener noreferrer"
                                  className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-1"
                                >
-                                 {t('navigate')} <ExternalLink size={10} />
+                                 {t('navigate')} <motion.div whileHover={{ scale: 1.2, x: 2, y: -2 }}><ExternalLink size={10} /></motion.div>
                                </a>
                              </div>
                              {userLocation.accuracy && (
@@ -707,20 +711,24 @@ export default function App() {
                     </div>
                     
                     <div className="flex items-center self-start sm:self-auto bg-black/5 dark:bg-white/5 rounded-full p-1">
-                      <button 
+                      <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={refreshLocation}
                         disabled={isLocating}
                         aria-label="Refresh location"
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all active:scale-95 disabled:opacity-50 focus:ring-2 outline-none",
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all disabled:opacity-50 focus:ring-2 outline-none",
                           locationError ? "hover:bg-red-100 dark:hover:bg-red-900/40 focus:ring-red-500" :
                           userLocation ? "hover:bg-emerald-100 dark:hover:bg-emerald-900/40 focus:ring-emerald-500" :
                           "hover:bg-slate-200 dark:hover:bg-slate-700 focus:ring-slate-500"
                         )}
                       >
-                        <RefreshCw size={12} className={isLocating ? "animate-spin" : ""} />
+                        <motion.div animate={isLocating ? { rotate: 360 } : {}} transition={isLocating ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}>
+                          <RefreshCw size={12} />
+                        </motion.div>
                         Refresh
-                      </button>
+                      </motion.button>
                       <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
                       <button
                         onClick={() => setIsLocationExpanded(!isLocationExpanded)}
@@ -747,7 +755,9 @@ export default function App() {
                         className="border-t border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20"
                       >
                         <div className="flex items-center gap-3 px-5 h-12">
-                          <MapPin size={16} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                          <motion.div whileHover={{ scale: 1.1, rotate: -5 }}>
+                            <MapPin size={16} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                          </motion.div>
                           <input
                             type="text"
                             value={postalCode}
@@ -785,14 +795,21 @@ export default function App() {
                     }}
                     className="w-full bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[1.5rem] h-14 sm:h-16 pl-12 sm:pl-14 pr-[100px] sm:pr-[110px] shadow-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500/50 transition-all text-base sm:text-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none text-slate-700 dark:text-slate-200"
                   />
-                  <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-brand-500 transition-colors w-5 h-5 sm:w-6 sm:h-6" />
+                  <motion.div 
+                    className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-brand-500 transition-colors"
+                    whileHover={{ scale: 1.1, rotate: -5 }}
+                  >
+                    <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </motion.div>
                   
                   <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     {isSearching ? (
                       <CircularProgress size={24} sx={{ color: '#16a34a' }} className="mr-4" />
                     ) : (
                       <>
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          whileTap={{ scale: 0.9 }}
                           type="button"
                           onClick={() => {
                             setStartWithVideo(true);
@@ -802,8 +819,10 @@ export default function App() {
                           title="Scan with Camera"
                         >
                           <Camera size={18} className="sm:w-5 sm:h-5" />
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1, y: -2 }}
+                          whileTap={{ scale: 0.9 }}
                           type="button"
                           onClick={() => {
                             setStartWithVideo(false);
@@ -813,7 +832,7 @@ export default function App() {
                           title="Ask the Live Agent"
                         >
                           <Mic size={18} className="sm:w-5 sm:h-5" />
-                        </button>
+                        </motion.button>
                       </>
                     )}
                   </div>
@@ -821,7 +840,9 @@ export default function App() {
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 px-1">
-                    <Store size={14} className="text-brand-500" />
+                    <motion.div whileHover={{ scale: 1.2, rotate: 10 }}>
+                      <Store size={14} className="text-brand-500" />
+                    </motion.div>
                     <span className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-[0.2em]">{t('stores_title')}</span>
                   </div>
                   <Carousel>
@@ -852,7 +873,7 @@ export default function App() {
 
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 px-1">
-                    <Tag size={14} className="text-brand-500" />
+                    <motion.div whileHover={{ scale: 1.2, rotate: -10 }}><Tag size={14} className="text-brand-500" /></motion.div>
                     <span className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-[0.2em]">{t('categories_title')}</span>
                   </div>
                   <Carousel>
@@ -932,7 +953,7 @@ export default function App() {
                         </div>
                         <p className="font-display font-bold text-slate-900 dark:text-white text-xl leading-tight">{cat.name}</p>
                         <div className="flex items-center text-[10px] font-bold text-brand-700 dark:text-brand-400 mt-4 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-all">
-                          {t('explore_deals')} <ChevronRight size={14} className="ml-1" />
+                          {t('explore_deals')} <motion.div whileHover={{ x: 4 }}><ChevronRight size={14} className="ml-1" /></motion.div>
                         </div>
                       </motion.button>
                     ))}
@@ -952,7 +973,7 @@ export default function App() {
                               <div className="flex items-center gap-3 px-2">
                                 <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
                                 <div className="flex items-center gap-2">
-                                  <Tag size={12} className="text-brand-600" />
+                                  <motion.div whileHover={{ scale: 1.2, rotate: -10 }}><Tag size={12} className="text-brand-600" /></motion.div>
                                   <h3 className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-[0.2em]">
                                     Comparison: {items[0].name}
                                   </h3>
@@ -977,11 +998,17 @@ export default function App() {
                                         {item.category}
                                       </Badge>
                                       <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-                                        <Store size={12} className="text-slate-300" /> {item.store}
+                                        <motion.div whileHover={{ scale: 1.2, rotate: 10 }}>
+                                          <Store size={12} className="text-slate-300" />
+                                        </motion.div>
+                                        {item.store}
                                       </span>
                                       {items.length > 1 && item.price === bestPrice && (
                                         <Badge variant="outline" className="text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-0.5 rounded-full uppercase tracking-widest border-amber-500/20 flex items-center gap-1">
-                                          <Tag size={10} /> Best Deal
+                                          <motion.div whileHover={{ scale: 1.2, rotate: -10 }}>
+                                            <Tag size={10} />
+                                          </motion.div>
+                                          Best Deal
                                         </Badge>
                                       )}
                                     </div>
@@ -1003,7 +1030,10 @@ export default function App() {
                                       {item.address && (
                                         <div className="flex items-center gap-2">
                                           <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                                            <MapPin size={12} className="text-slate-300 shrink-0" /> <span>{item.address}</span>
+                                            <motion.div whileHover={{ scale: 1.2, y: -2 }}>
+                                              <MapPin size={12} className="text-slate-300 shrink-0" />
+                                            </motion.div>
+                                            <span>{item.address}</span>
                                           </span>
                                           {item.distance && (
                                             <span className="text-[9px] sm:text-[10px] font-mono font-bold text-brand-500 bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10 whitespace-nowrap">
@@ -1020,7 +1050,7 @@ export default function App() {
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-brand-600 dark:text-brand-400 hover:underline transition-all"
                                       >
-                                        Navigate <ExternalLink size={12} />
+                                        Navigate <motion.div whileHover={{ scale: 1.2, x: 2, y: -2 }}><ExternalLink size={12} /></motion.div>
                                       </a>
                                     )}
                                   </div>
@@ -1052,7 +1082,7 @@ export default function App() {
                               <div className="flex items-center gap-3 px-2">
                                 <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
                                 <div className="flex items-center gap-2">
-                                  <Tag size={12} className="text-slate-500" />
+                                  <motion.div whileHover={{ scale: 1.2, rotate: -10 }}><Tag size={12} className="text-slate-500" /></motion.div>
                                   <h3 className="text-[10px] font-bold text-slate-700 dark:text-slate-400 uppercase tracking-[0.2em]">
                                     Comparison: {items[0].name}
                                   </h3>
@@ -1077,11 +1107,17 @@ export default function App() {
                                         {item.category}
                                       </Badge>
                                       <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5 uppercase tracking-wider">
-                                        <Store size={12} className="text-slate-300" /> {item.store}
+                                        <motion.div whileHover={{ scale: 1.2, rotate: 10 }}>
+                                          <Store size={12} className="text-slate-300" />
+                                        </motion.div>
+                                        {item.store}
                                       </span>
                                       {items.length > 1 && item.price === bestPrice && (
                                         <Badge variant="outline" className="text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-0.5 rounded-full uppercase tracking-widest border-amber-500/20 flex items-center gap-1">
-                                          <Tag size={10} /> Best Deal
+                                          <motion.div whileHover={{ scale: 1.2, rotate: -10 }}>
+                                            <Tag size={10} />
+                                          </motion.div>
+                                          Best Deal
                                         </Badge>
                                       )}
                                     </div>
@@ -1094,7 +1130,10 @@ export default function App() {
                                         {item.address && (
                                           <div className="flex items-center gap-2 mt-1">
                                             <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                                              <MapPin size={12} className="text-slate-300 shrink-0" /> <span>{item.address}</span>
+                                              <motion.div whileHover={{ scale: 1.2, y: -2 }}>
+                                                <MapPin size={12} className="text-slate-300 shrink-0" />
+                                              </motion.div>
+                                              <span>{item.address}</span>
                                             </span>
                                             {item.distance && (
                                               <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-500 bg-slate-500/5 px-2 py-0.5 rounded-full border border-slate-500/10 whitespace-nowrap">
@@ -1112,7 +1151,7 @@ export default function App() {
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-brand-600 dark:text-brand-400 hover:underline transition-all"
                                       >
-                                        Navigate <ExternalLink size={12} />
+                                        Navigate <motion.div whileHover={{ scale: 1.2, x: 2, y: -2 }}><ExternalLink size={12} /></motion.div>
                                       </a>
                                     )}
                                   </div>
@@ -1157,7 +1196,7 @@ export default function App() {
                       onClick={handleShare}
                       className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:text-brand-600 hover:bg-transparent hover:scale-105 transition-all flex items-center gap-1.5"
                     >
-                      <Share2 size={12} /> Share
+                      <motion.div whileHover={{ scale: 1.2, rotate: -15 }}><Share2 size={12} /></motion.div> Share
                     </Button>
                     
                     <div className="relative">
@@ -1208,9 +1247,9 @@ export default function App() {
                     className="brand-gradient text-white p-6 rounded-[2.5rem] shadow-xl shadow-brand-500/20 flex items-center justify-between border border-white/10"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+                      <motion.div whileHover={{ scale: 1.1, rotate: 10 }} className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
                         <CheckCircle2 size={18} />
-                      </div>
+                      </motion.div>
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{t('selected_items')}</p>
                         <p className="text-sm font-bold">{selectedCount} {t('products_selected')}</p>
@@ -1250,14 +1289,17 @@ export default function App() {
                     <div key={store} className="space-y-6">
                       <div className="flex items-center gap-4 px-2">
                         <div className="w-10 h-10 glass rounded-xl flex items-center justify-center text-brand-500">
-                          <Store size={20} />
+                          <motion.div whileHover={{ scale: 1.2, rotate: 10 }}><Store size={20} /></motion.div>
                         </div>
                         <div className="flex flex-col">
                           <h3 className="font-display font-bold text-xl text-slate-800 dark:text-white leading-tight">{store}</h3>
                           {items[0]?.address && (
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
-                                <MapPin size={10} /> {items[0].address}
+                                <motion.div whileHover={{ scale: 1.2, y: -2 }}>
+                                  <MapPin size={10} />
+                                </motion.div>
+                                {items[0].address}
                               </span>
                               {items[0]?.mapsUri && (
                                 <a 
@@ -1266,7 +1308,7 @@ export default function App() {
                                   rel="noopener noreferrer"
                                   className="text-[10px] font-bold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-0.5"
                                 >
-                                  {t('navigate')} <ExternalLink size={10} />
+                                  {t('navigate')} <motion.div whileHover={{ scale: 1.2, x: 2, y: -2 }}><ExternalLink size={10} /></motion.div>
                                 </a>
                               )}
                             </div>
@@ -1342,7 +1384,7 @@ export default function App() {
                                 aria-label={`Remove ${item.name} from list`}
                                 className="sm:hidden text-slate-300 dark:text-slate-700 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-500 transition-colors rounded-xl"
                               >
-                                <Trash2 size={18} />
+                                <motion.div whileHover={{ scale: 1.2, rotate: 15 }}><Trash2 size={18} /></motion.div>
                               </Button>
                             </div>
 
@@ -1357,7 +1399,9 @@ export default function App() {
                                   </h3>
                                   {item.address && (
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <MapPin size={12} className="text-slate-500 dark:text-slate-400 shrink-0" />
+                                      <motion.div whileHover={{ scale: 1.2, y: -2 }}>
+                                        <MapPin size={12} className="text-slate-500 dark:text-slate-400 shrink-0" />
+                                      </motion.div>
                                       <span className="text-[11px] font-medium text-slate-500">{item.address}</span>
                                       {item.mapsUri && (
                                         <a 
@@ -1366,7 +1410,7 @@ export default function App() {
                                           rel="noopener noreferrer"
                                           className="inline-flex items-center gap-1 text-[10px] font-bold text-brand-600 dark:text-brand-400 hover:underline whitespace-nowrap ml-1"
                                         >
-                                          {t('navigate')} <ExternalLink size={10} />
+                                          {t('navigate')} <motion.div whileHover={{ scale: 1.2, x: 2, y: -2 }}><ExternalLink size={10} /></motion.div>
                                         </a>
                                       )}
                                     </div>
@@ -1424,7 +1468,7 @@ export default function App() {
                               aria-label={`Remove ${item.name} from list`}
                               className="hidden sm:flex text-slate-300 dark:text-slate-700 hover:text-red-500 dark:hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors rounded-xl"
                             >
-                              <Trash2 size={20} />
+                              <motion.div whileHover={{ scale: 1.2, rotate: 15 }}><Trash2 size={20} /></motion.div>
                             </Button>
                           </motion.div>
                         ))}
@@ -1703,22 +1747,22 @@ export default function App() {
             }
           }}
         >
-          <BottomNavigationAction label={t('tab_profile')} value="profile" icon={<User size={20} strokeWidth={activeTab === 'profile' ? 2.5 : 2} />} />
-          <BottomNavigationAction label={t('tab_search')} value="search" icon={<Search size={20} strokeWidth={activeTab === 'search' ? 2.5 : 2} />} />
-          <BottomNavigationAction label={t('tab_scan')} value="scanner" icon={<Camera size={20} strokeWidth={activeTab === 'scanner' ? 2.5 : 2} />} />
-          <BottomNavigationAction label={t('tab_meals')} value="meal-plan" icon={<Calendar size={20} strokeWidth={activeTab === 'meal-plan' ? 2.5 : 2} />} />
+          <BottomNavigationAction label={t('tab_profile')} value="profile" icon={<motion.div whileHover={{ scale: 1.2, y: -2 }} whileTap={{ scale: 0.9 }}><User size={20} strokeWidth={activeTab === 'profile' ? 2.5 : 2} /></motion.div>} />
+          <BottomNavigationAction label={t('tab_search')} value="search" icon={<motion.div whileHover={{ scale: 1.2, y: -2 }} whileTap={{ scale: 0.9 }}><Search size={20} strokeWidth={activeTab === 'search' ? 2.5 : 2} /></motion.div>} />
+          <BottomNavigationAction label={t('tab_scan')} value="scanner" icon={<motion.div whileHover={{ scale: 1.2, y: -2 }} whileTap={{ scale: 0.9 }}><Camera size={20} strokeWidth={activeTab === 'scanner' ? 2.5 : 2} /></motion.div>} />
+          <BottomNavigationAction label={t('tab_meals')} value="meal-plan" icon={<motion.div whileHover={{ scale: 1.2, y: -2 }} whileTap={{ scale: 0.9 }}><Calendar size={20} strokeWidth={activeTab === 'meal-plan' ? 2.5 : 2} /></motion.div>} />
           <BottomNavigationAction 
             label={t('tab_list')} 
             value="list" 
             icon={
-              <div className="relative">
+              <motion.div whileHover={{ scale: 1.2, y: -2 }} whileTap={{ scale: 0.9 }} className="relative">
                 {groceryList.length > 0 && activeTab !== 'list' && (
-                  <div className="absolute -top-2 -right-3 bg-brand-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-slate-900 shadow-sm" aria-hidden="true">
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-3 bg-brand-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-slate-900 shadow-sm" aria-hidden="true">
                     {groceryList.length}
-                  </div>
+                  </motion.div>
                 )}
                 <ShoppingCart size={20} strokeWidth={activeTab === 'list' ? 2.5 : 2} />
-              </div>
+              </motion.div>
             } 
           />
         </BottomNavigation>
@@ -1759,12 +1803,12 @@ export default function App() {
                 onClick={() => setShowInfo(false)}
                 className="absolute top-6 right-6 text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
               >
-                <X size={24} />
+                <motion.div whileHover={{ scale: 1.2, rotate: 90 }}><X size={24} /></motion.div>
               </button>
               
               <div className="space-y-4">
                 <div className="w-16 h-16 bg-brand-500/10 rounded-3xl flex items-center justify-center text-brand-600">
-                  <Tag size={32} />
+                  <motion.div whileHover={{ scale: 1.2, rotate: -10 }}><Tag size={32} /></motion.div>
                 </div>
                 <h3 className="text-2xl font-display font-bold text-slate-800 dark:text-white tracking-tight">About Chanoch</h3>
                 <div className="space-y-3 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
@@ -1800,7 +1844,7 @@ export default function App() {
             exit={{ opacity: 0, y: 50, x: '-50%' }}
             className="fixed bottom-24 left-1/2 z-50 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10"
           >
-            <CheckCircle2 size={18} className="text-emerald-400" />
+            <motion.div animate={{ scale: [0, 1.2, 1] }} transition={{ duration: 0.3 }}><CheckCircle2 size={18} className="text-emerald-400" /></motion.div>
             <span className="text-sm font-bold tracking-tight">{t('list_copied')}</span>
           </motion.div>
         )}
