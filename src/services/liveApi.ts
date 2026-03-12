@@ -56,7 +56,7 @@ export async function connectToLive(callbacks: {
   const languageContext = `The user's preferred language is ${language}. You MUST respond and interact exclusively in this language. If the user speaks in another language, acknowledge it but stick to ${language} if that's what they've selected in the UI.`;
 
   const sessionPromise = ai.live.connect({
-    model: "gemini-2.5-flash-native-audio-preview-12-2025",
+    model: "gemini-2.5-flash-native-audio-preview-09-2025",
     config: {
       responseModalities: [Modality.AUDIO],
       speechConfig: {
