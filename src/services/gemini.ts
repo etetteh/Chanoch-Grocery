@@ -3,8 +3,9 @@ import { SaleItem, HealthProfile, ScannedItem, MealPlan, GroceryItem } from "../
 import { sanitizePromptInput } from "../utils/security";
 
 function getAIClient() {
-  const customApiKey = process.env.API_KEY;
-  const defaultApiKey = process.env.GEMINI_API_KEY;
+  const env = (window as any).__ENV__ || {};
+  const customApiKey = env.API_KEY || process.env.API_KEY;
+  const defaultApiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   const apiKeyToUse = customApiKey || defaultApiKey;
   return new GoogleGenAI({ apiKey: apiKeyToUse });
 }
@@ -269,8 +270,9 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
 
 export async function generateImage(prompt: string): Promise<string | null> {
   try {
-    const customApiKey = process.env.API_KEY;
-    const defaultApiKey = process.env.GEMINI_API_KEY;
+    const env = (window as any).__ENV__ || {};
+    const customApiKey = env.API_KEY || process.env.API_KEY;
+    const defaultApiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     
     // If a premium key is provided via API_KEY, use the premium model
     // Otherwise fallback to the default key and the free model

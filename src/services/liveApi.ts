@@ -37,7 +37,8 @@ export async function connectToLive(callbacks: {
   onClose?: () => void;
   onError?: (error: any) => void;
 }, userLocation: { lat: number; lng: number; accuracy?: number } | null, groceryList: any[] = [], healthProfile: any = null, language: string = 'en', currentMealPlan: any = null) {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  const env = (window as any).__ENV__ || {};
+  const apiKey = env.API_KEY || process.env.API_KEY || env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("API key is missing");
 
   const ai = new GoogleGenAI({ apiKey });
