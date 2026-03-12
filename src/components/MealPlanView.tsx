@@ -237,7 +237,7 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
       </div>
 
       {!mealPlan && !isGenerating && (
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-12 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-12 text-center shadow-md border border-gray-200 dark:border-gray-700">
           <div className="w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <ChefHat className="w-12 h-12 text-emerald-500" />
           </div>
@@ -276,7 +276,7 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
       )}
 
       {isGenerating && (
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-16 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-16 text-center shadow-md border border-gray-200 dark:border-gray-700">
           <CircularProgress size={64} sx={{ color: '#10b981' }} className="mx-auto mb-6" />
           <h3 className="text-2xl font-display font-bold text-gray-900 dark:text-white mb-3">{t('meal_crafting_title')}</h3>
           <p className="text-gray-600 dark:text-gray-400 text-lg">{t('meal_crafting_subtitle')}</p>
@@ -311,8 +311,8 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
               <div 
                 key={index} 
                 className={cn(
-                  "bg-white dark:bg-gray-800 rounded-2xl shadow-sm border transition-all overflow-hidden",
-                  isToday ? "border-l-4 border-l-amber-500 border-y-gray-100 border-r-gray-100 dark:border-y-gray-700 dark:border-r-gray-700" : "border-gray-100 dark:border-gray-700"
+                  "bg-white dark:bg-gray-800 rounded-2xl shadow-md border transition-all overflow-hidden",
+                  isToday ? "border-l-4 border-l-amber-500 border-y-gray-200 border-r-gray-200 dark:border-y-gray-700 dark:border-r-gray-700" : "border-gray-200 dark:border-gray-700"
                 )}
               >
                 <button 

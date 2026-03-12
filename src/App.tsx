@@ -793,16 +793,16 @@ export default function App() {
                       setSearchQuery(e.target.value);
                       debouncedSearch(e.target.value, selectedStore, selectedCategory, postalCode);
                     }}
-                    className="w-full bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[1.5rem] h-14 sm:h-16 pl-12 sm:pl-14 pr-[100px] sm:pr-[110px] shadow-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500/50 transition-all text-base sm:text-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none text-slate-700 dark:text-slate-200"
+                    className="w-full bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[2rem] h-16 sm:h-20 pl-14 sm:pl-16 pr-[110px] sm:pr-[130px] shadow-md hover:shadow-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500/50 transition-all text-lg sm:text-xl placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none text-slate-700 dark:text-slate-200"
                   />
                   <motion.div 
-                    className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-brand-500 transition-colors"
+                    className="absolute left-5 sm:left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-brand-500 transition-colors"
                     whileHover={{ scale: 1.1, rotate: -5 }}
                   >
-                    <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Search className="w-6 h-6 sm:w-7 sm:h-7" />
                   </motion.div>
                   
-                  <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     {isSearching ? (
                       <CircularProgress size={24} sx={{ color: '#16a34a' }} className="mr-4" />
                     ) : (
@@ -1268,7 +1268,7 @@ export default function App() {
                   <motion.div 
                     animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
                     transition={{ duration: 4, repeat: Infinity }}
-                    className="w-32 h-32 glass rounded-5xl flex items-center justify-center mx-auto text-slate-300 dark:text-slate-600"
+                    className="w-32 h-32 glass rounded-5xl flex items-center justify-center mx-auto text-slate-300 dark:text-slate-600 border border-slate-200 dark:border-white/10 shadow-sm"
                   >
                     <ShoppingCart size={56} strokeWidth={1.5} />
                   </motion.div>
