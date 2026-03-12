@@ -730,15 +730,6 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
                 className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-50 shadow-[0_0_15px_rgba(34,197,94,0.8)]"
               />
             </div>
-            
-            {/* Camera Switch Toggle */}
-            <button
-              onClick={toggleCamera}
-              className="absolute top-6 right-6 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all pointer-events-auto z-20 opacity-80 hover:opacity-100"
-              aria-label="Switch Camera"
-            >
-              <SwitchCamera className="w-6 h-6" />
-            </button>
           </div>
 
           {/* Highlights Overlay */}
@@ -855,6 +846,17 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
             </div>
 
             <div className="flex items-center gap-2 pointer-events-auto">
+              {isVideoEnabled && (
+                <Button 
+                  variant="outline"
+                  size="icon"
+                  onClick={toggleCamera}
+                  aria-label="Switch Camera"
+                  className="w-12 h-12 bg-black/40 hover:bg-black/60 hover:scale-110 border-white/20 rounded-full transition-all active:scale-90 backdrop-blur-md outline-none text-white shadow-lg"
+                >
+                  <SwitchCamera size={20} />
+                </Button>
+              )}
               <Button 
                 variant="outline"
                 size="icon"
