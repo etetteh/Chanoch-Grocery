@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, RefreshCw, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Camera, RefreshCw, CheckCircle2, AlertCircle, X, SwitchCamera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { HealthProfile, ScannedItem } from '../types';
 import { analyzeGroceryItem } from '../services/gemini';
@@ -18,6 +18,7 @@ export default function ScannerView({ profile, scanTrigger = 0 }: Props) {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedItem, setScannedItem] = useState<ScannedItem | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const streamRef = useRef<MediaStream | null>(null);
   const isMountedRef = useRef(true);
 
@@ -28,7 +29,7 @@ export default function ScannerView({ profile, scanTrigger = 0 }: Props) {
       isMountedRef.current = false;
       stopCamera();
     };
-  }, []);
+  }, [facingMode]);
 
   useEffect(() => {
     if (scanTrigger > 0 && !isScanning && !scannedItem) {
@@ -37,9 +38,10 @@ export default function ScannerView({ profile, scanTrigger = 0 }: Props) {
   }, [scanTrigger]);
 
   const startCamera = async () => {
+    stopCamera();
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: { facingMode }
       });
       
       if (!isMountedRef.current) {
@@ -65,6 +67,10 @@ export default function ScannerView({ profile, scanTrigger = 0 }: Props) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
+  };
+
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
   };
 
   const captureAndAnalyze = async () => {
@@ -119,14 +125,22 @@ export default function ScannerView({ profile, scanTrigger = 0 }: Props) {
 
       {!scannedItem ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 space-y-4">
-          <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center">
+          <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center group">
             <video
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
             />
             <canvas ref={canvasRef} className="hidden" />
+            
+            <button
+              onClick={toggleCamera}
+              className="absolute top-4 right-4 p-2.5 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all z-10 opacity-80 hover:opacity-100"
+              aria-label="Switch Camera"
+            >
+              <SwitchCamera className="w-5 h-5" />
+            </button>
             
             {isScanning && (
               <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white">
