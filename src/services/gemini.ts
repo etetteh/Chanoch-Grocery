@@ -4,8 +4,8 @@ import { sanitizePromptInput } from "../utils/security";
 
 function getAIClient() {
   const env = (window as any).__ENV__ || {};
-  const customApiKey = env.API_KEY || process.env.API_KEY;
-  const defaultApiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  const customApiKey = env.API_KEY || (typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined);
+  const defaultApiKey = env.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : undefined);
   const apiKeyToUse = customApiKey || defaultApiKey;
   return new GoogleGenAI({ apiKey: apiKeyToUse });
 }
@@ -271,8 +271,8 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
 export async function generateImage(prompt: string): Promise<string | null> {
   try {
     const env = (window as any).__ENV__ || {};
-    const customApiKey = env.API_KEY || process.env.API_KEY;
-    const defaultApiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    const customApiKey = env.API_KEY || (typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined);
+    const defaultApiKey = env.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : undefined);
     
     // If a premium key is provided via API_KEY, use the premium model
     // Otherwise fallback to the default key and the free model

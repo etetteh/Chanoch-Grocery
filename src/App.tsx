@@ -156,23 +156,7 @@ export default function App() {
   }, [mealPlan]);
 
   const [hasApiKey, setHasApiKey] = useState(true);
-  const [isCheckingKey, setIsCheckingKey] = useState(true);
-
-  useEffect(() => {
-    const checkApiKey = async () => {
-      try {
-        if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-          const hasKey = await window.aistudio.hasSelectedApiKey();
-          setHasApiKey(hasKey);
-        }
-      } catch (e) {
-        console.error("Error checking API key:", e);
-      } finally {
-        setIsCheckingKey(false);
-      }
-    };
-    checkApiKey();
-  }, []);
+  const [isCheckingKey, setIsCheckingKey] = useState(false);
 
   const handleConnectKey = async () => {
     try {
@@ -946,14 +930,16 @@ export default function App() {
                           setSearchQuery(cat.name);
                           handleSearch(undefined, cat.name);
                         }}
-                        className="glass p-8 rounded-[2.5rem] text-left border-2 border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-500 transition-all group relative overflow-hidden active:scale-[0.98]"
+                        className="glass p-6 sm:p-8 rounded-[2rem] text-left border-2 border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-500 transition-all group relative overflow-hidden active:scale-[0.98] flex items-center justify-between"
                       >
-                        <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3", cat.color)}>
-                          {cat.icon}
+                        <div>
+                          <p className="font-display font-bold text-slate-900 dark:text-white text-lg sm:text-xl leading-tight">{cat.name}</p>
+                          <div className="flex items-center text-[10px] font-bold text-brand-700 dark:text-brand-400 mt-2 sm:mt-4 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-all">
+                            {t('explore_deals')} <motion.div whileHover={{ x: 4 }}><ChevronRight size={14} className="ml-1" /></motion.div>
+                          </div>
                         </div>
-                        <p className="font-display font-bold text-slate-900 dark:text-white text-xl leading-tight">{cat.name}</p>
-                        <div className="flex items-center text-[10px] font-bold text-brand-700 dark:text-brand-400 mt-4 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-all">
-                          {t('explore_deals')} <motion.div whileHover={{ x: 4 }}><ChevronRight size={14} className="ml-1" /></motion.div>
+                        <div className={cn("w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3", cat.color)}>
+                          {cat.icon}
                         </div>
                       </motion.button>
                     ))}
