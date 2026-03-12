@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Mic, X, Loader2, Camera, CameraOff, Minimize2, Maximize2, AlertCircle, Monitor } from 'lucide-react';
+import { Mic, X, Loader2, Camera, CameraOff, Minimize2, Maximize2, AlertCircle, Monitor, SwitchCamera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -116,6 +116,9 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
   const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const isMountedRef = useRef(true);
+  const isVideoIntendedRef = useRef(initialVideoEnabled);
+  const facingModeRef = useRef<'environment' | 'user'>('environment');
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -481,13 +484,15 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
     try {
       stopMediaTracks(); // Stop any existing stream
       setIsVideoEnabled(true);
+      isVideoIntendedRef.current = true;
       setIsScreenSharing(false);
       
       let stream: MediaStream;
+      const currentFacingMode = facingModeRef.current;
       
       // Add a timeout to getUserMedia to prevent hanging
       const streamPromise = navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { facingMode: currentFacingMode } 
       }).catch(async (e) => {
         if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
           throw e; // Don't retry if permission was denied
@@ -502,7 +507,7 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
 
       stream = await Promise.race([streamPromise, timeoutPromise]);
       
-      if (!isMountedRef.current || !isVideoEnabled) {
+      if (!isMountedRef.current || !isVideoIntendedRef.current) {
         // Component unmounted or video disabled while waiting for camera, stop it immediately
         stream.getTracks().forEach(track => track.stop());
         return;
@@ -570,7 +575,17 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
   const stopVideo = () => {
     stopMediaTracks();
     setIsVideoEnabled(false);
+    isVideoIntendedRef.current = false;
     setIsScreenSharing(false);
+  };
+
+  const toggleCamera = () => {
+    const newMode = facingMode === 'environment' ? 'user' : 'environment';
+    facingModeRef.current = newMode;
+    setFacingMode(newMode);
+    if (isVideoIntendedRef.current) {
+      startVideo();
+    }
   };
 
   const startScreenShare = async () => {
@@ -697,7 +712,7 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
             autoPlay 
             playsInline 
             muted 
-            className="absolute inset-0 w-full h-full object-cover z-0" 
+            className={`absolute inset-0 w-full h-full object-cover z-0 ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`} 
           />
           {/* Viewfinder Overlay */}
           <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center p-8">
@@ -715,6 +730,15 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
                 className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-50 shadow-[0_0_15px_rgba(34,197,94,0.8)]"
               />
             </div>
+            
+            {/* Camera Switch Toggle */}
+            <button
+              onClick={toggleCamera}
+              className="absolute top-6 right-6 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all pointer-events-auto z-20 opacity-80 hover:opacity-100"
+              aria-label="Switch Camera"
+            >
+              <SwitchCamera className="w-6 h-6" />
+            </button>
           </div>
 
           {/* Highlights Overlay */}
