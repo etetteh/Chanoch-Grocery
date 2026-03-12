@@ -1,0 +1,5 @@
+{
+  "name": "Chanoch",
+  "description": "Find grocery sales and build your shopping list with AI-powered search and voice assistance.",
+  "requestFramePermissions": ["microphone", "geolocation", "camera", "display-capture"]
+}

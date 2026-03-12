@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://toronto-sale-scout.run.app/sitemap.xml
