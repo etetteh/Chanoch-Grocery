@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, Mic, Plus, Trash2, CheckCircle2, Circle, Store, Loader2, X, ChevronRight, Tag, MapPin, ExternalLink, RefreshCw, Moon, Sun, Share2, Camera, User, Heart, Calendar, Key } from 'lucide-react';
+import { Search, ShoppingCart, Mic, Plus, Trash2, CheckCircle2, Circle, Store, Loader2, X, ChevronRight, ChevronDown, Tag, MapPin, ExternalLink, RefreshCw, Moon, Sun, Share2, Camera, User, Heart, Calendar, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -104,6 +104,7 @@ export default function App() {
   const [showToast, setShowToast] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLiveAssistantOpen, setIsLiveAssistantOpen] = useState(false);
+  const [isLocationExpanded, setIsLocationExpanded] = useState(false);
 
   const [healthProfile, setHealthProfile] = useState<HealthProfile>(() => {
     const saved = localStorage.getItem('toronto-health-profile');
@@ -658,20 +659,20 @@ export default function App() {
               className="space-y-8"
             >
               {/* Search Section */}
-              <div className="space-y-4">
-                {/* Location Status */}
-                <div className="flex flex-col gap-2">
-                  <div className={cn(
-                    "flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 rounded-[2rem] text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm",
-                    locationError ? "bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800/30" : 
-                    userLocation ? "bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/30" :
-                    "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                  )}>
-                    <div className="flex items-start sm:items-center gap-3">
+              <div className="flex flex-col gap-3">
+                {/* Location Status & Postal Code Split Button */}
+                <div className={cn(
+                  "flex flex-col rounded-[1.5rem] transition-all shadow-sm border overflow-hidden",
+                  locationError ? "bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-800/30" : 
+                  userLocation ? "bg-emerald-50 border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-800/30" :
+                  "bg-slate-100 border-slate-200 dark:bg-slate-800 dark:border-slate-700"
+                )}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3.5 text-[11px] font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-3">
                       <div className={cn(
-                        "p-2 rounded-full",
+                        "p-2 rounded-full flex-shrink-0",
                         locationError ? "bg-red-100 dark:bg-red-900/40" :
-                        userLocation ? "bg-emerald-100 dark:bg-emerald-900/40" :
+                        userLocation ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-400" :
                         "bg-slate-200 dark:bg-slate-700"
                       )}>
                         {isLocating ? (
@@ -680,7 +681,7 @@ export default function App() {
                           <MapPin size={14} />
                         )}
                       </div>
-                      <div className="flex flex-col">
+                      <div className="flex flex-col justify-center">
                         {isLocating ? <span>{t('locating')}</span> : 
                          locationError ? <span>{locationError}</span> : 
                          userLocation ? (
@@ -691,59 +692,88 @@ export default function App() {
                                  href={`https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}`}
                                  target="_blank"
                                  rel="noopener noreferrer"
-                                 className="text-emerald-600 dark:text-emerald-400 underline decoration-emerald-600/30 hover:decoration-emerald-600 transition-all flex items-center gap-1"
+                                 className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-1"
                                >
                                  {t('navigate')} <ExternalLink size={10} />
                                </a>
                              </div>
                              {userLocation.accuracy && (
-                               <span className="text-[9px] opacity-70 mt-0.5">{t('accuracy')}: ±{Math.round(userLocation.accuracy)}m</span>
+                               <span className="text-[9px] opacity-70 mt-0.5">{t('accuracy')}: ±{Math.round(userLocation.accuracy)}M</span>
                              )}
                            </>
                          ) : 
                          <span>Location Disabled</span>}
                       </div>
                     </div>
-                    <button 
-                      onClick={refreshLocation}
-                      disabled={isLocating}
-                      aria-label="Refresh location"
-                      className={cn(
-                        "self-start sm:self-auto flex items-center gap-1.5 px-4 py-2 rounded-full transition-all active:scale-95 disabled:opacity-50 focus:ring-2 outline-none",
-                        locationError ? "hover:bg-red-100 dark:hover:bg-red-900/40 focus:ring-red-500" :
-                        userLocation ? "hover:bg-emerald-100 dark:hover:bg-emerald-900/40 focus:ring-emerald-500" :
-                        "hover:bg-slate-200 dark:hover:bg-slate-700 focus:ring-slate-500"
-                      )}
-                    >
-                      <RefreshCw size={12} className={isLocating ? "animate-spin" : ""} />
-                      Refresh
-                    </button>
+                    
+                    <div className="flex items-center self-start sm:self-auto bg-black/5 dark:bg-white/5 rounded-full p-1">
+                      <button 
+                        onClick={refreshLocation}
+                        disabled={isLocating}
+                        aria-label="Refresh location"
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all active:scale-95 disabled:opacity-50 focus:ring-2 outline-none",
+                          locationError ? "hover:bg-red-100 dark:hover:bg-red-900/40 focus:ring-red-500" :
+                          userLocation ? "hover:bg-emerald-100 dark:hover:bg-emerald-900/40 focus:ring-emerald-500" :
+                          "hover:bg-slate-200 dark:hover:bg-slate-700 focus:ring-slate-500"
+                        )}
+                      >
+                        <RefreshCw size={12} className={isLocating ? "animate-spin" : ""} />
+                        Refresh
+                      </button>
+                      <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+                      <button
+                        onClick={() => setIsLocationExpanded(!isLocationExpanded)}
+                        aria-label="Toggle postal code input"
+                        className={cn(
+                          "p-2 rounded-full transition-all active:scale-95 focus:ring-2 outline-none",
+                          locationError ? "hover:bg-red-100 dark:hover:bg-red-900/40 focus:ring-red-500" :
+                          userLocation ? "hover:bg-emerald-100 dark:hover:bg-emerald-900/40 focus:ring-emerald-500" :
+                          "hover:bg-slate-200 dark:hover:bg-slate-700 focus:ring-slate-500"
+                        )}
+                      >
+                        <ChevronDown size={14} className={cn("transition-transform duration-300", isLocationExpanded && "rotate-180")} />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-full px-4 py-2 shadow-sm">
-                    <MapPin size={14} className="text-slate-500 dark:text-slate-400" />
-                    <input
-                      type="text"
-                      value={postalCode}
-                      autoCorrect="on"
-                      spellCheck="true"
-                      autoCapitalize="characters"
-                      onChange={(e) => {
-                        const val = e.target.value.toUpperCase();
-                        setPostalCode(val);
-                        localStorage.setItem('user-postal-code', val);
-                        debouncedSearch(searchQuery, selectedStore, selectedCategory, val);
-                      }}
-                      placeholder="Enter Postal/Zip Code (e.g. M5V 3L9 or 90210)"
-                      className="bg-transparent border-none outline-none text-xs font-medium w-full text-slate-700 dark:text-slate-300 placeholder:text-slate-500 dark:placeholder:text-slate-400"
-                    />
-                  </div>
+                  <AnimatePresence>
+                    {isLocationExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="border-t border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20"
+                      >
+                        <div className="flex items-center gap-3 px-5 h-12">
+                          <MapPin size={16} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={postalCode}
+                            autoCorrect="on"
+                            spellCheck="true"
+                            autoCapitalize="characters"
+                            onChange={(e) => {
+                              const val = e.target.value.toUpperCase();
+                              setPostalCode(val);
+                              localStorage.setItem('user-postal-code', val);
+                              debouncedSearch(searchQuery, selectedStore, selectedCategory, val);
+                            }}
+                            placeholder="Enter Postal/Zip Code (e.g. M5V 3L9 or 90210)"
+                            className="bg-transparent border-none outline-none text-sm font-medium w-full text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
+                {/* Main Search Input */}
                 <form onSubmit={handleSearch} role="search" className="relative group">
-                  <Input
+                  <input
                     type="text"
-                    placeholder={t('search_placeholder')}
+                    placeholder="Find the best deals in your area..."
                     aria-label={t('search_placeholder')}
                     value={searchQuery}
                     autoCorrect="on"
@@ -753,41 +783,37 @@ export default function App() {
                       setSearchQuery(e.target.value);
                       debouncedSearch(e.target.value, selectedStore, selectedCategory, postalCode);
                     }}
-                    className="w-full glass border border-slate-200 dark:border-white/10 rounded-3xl h-14 sm:h-16 pl-12 sm:pl-16 pr-[100px] sm:pr-[120px] shadow-2xl shadow-brand-500/5 focus-visible:ring-4 focus-visible:ring-brand-500/20 focus-visible:border-brand-500 transition-all text-lg sm:text-xl placeholder:text-slate-500 dark:placeholder:text-slate-600"
+                    className="w-full bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[1.5rem] h-14 sm:h-16 pl-12 sm:pl-14 pr-[100px] sm:pr-[110px] shadow-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500/50 transition-all text-base sm:text-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none text-slate-700 dark:text-slate-200"
                   />
-                  <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 group-focus-within:text-brand-500 transition-colors w-5 h-5 sm:w-7 sm:h-7" />
+                  <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-brand-500 transition-colors w-5 h-5 sm:w-6 sm:h-6" />
                   
-                  <div className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:gap-2">
+                  <div className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     {isSearching ? (
                       <CircularProgress size={24} sx={{ color: '#16a34a' }} className="mr-4" />
                     ) : (
                       <>
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="icon"
                           onClick={() => {
                             setStartWithVideo(true);
                             setIsLiveAssistantOpen(true);
                           }}
-                          className="bg-brand-500/10 text-brand-600 dark:text-brand-400 hover:bg-brand-500 hover:text-white rounded-full transition-all"
+                          className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-brand-50 dark:bg-emerald-900/30 text-brand-600 dark:text-emerald-400 hover:bg-brand-100 dark:hover:bg-emerald-800/50 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-brand-500/50"
                           title="Scan with Camera"
                         >
-                          <Camera size={24} />
-                        </Button>
-                        <Button
+                          <Camera size={18} className="sm:w-5 sm:h-5" />
+                        </button>
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="icon"
                           onClick={() => {
                             setStartWithVideo(false);
                             setIsLiveAssistantOpen(true);
                           }}
-                          className="bg-brand-500/10 text-brand-600 dark:text-brand-400 hover:bg-brand-500 hover:text-white rounded-full transition-all group-focus-within:animate-pulse"
+                          className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 bg-brand-50 dark:bg-emerald-900/30 text-brand-600 dark:text-emerald-400 hover:bg-brand-100 dark:hover:bg-emerald-800/50 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-brand-500/50 group-focus-within:animate-pulse"
                           title="Ask the Live Agent"
                         >
-                          <Mic size={24} />
-                        </Button>
+                          <Mic size={18} className="sm:w-5 sm:h-5" />
+                        </button>
                       </>
                     )}
                   </div>
