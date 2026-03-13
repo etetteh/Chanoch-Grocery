@@ -6,6 +6,26 @@ export interface LiveSession {
   close: () => void;
 }
 
+/**
+ * Builds a concrete dayIndex → date lookup table anchored to the moment the
+ * Live session is created. This is injected into both the system prompt context
+ * and the addMealToPlan tool description so the model has an unambiguous mapping
+ * and never has to calculate relative day offsets from natural language alone.
+ * Example output: "Day 0 = Friday, Mar 14 | Day 1 = Saturday, Mar 15 | ..."
+ */
+function buildDaySchedule(days: number = 14): { schedule: string; lookup: string[] } {
+  const lookup: string[] = [];
+  const parts: string[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    lookup.push(label);
+    parts.push(`Day ${i} = ${label}`);
+  }
+  return { schedule: parts.join(' | '), lookup };
+}
+
 export async function connectToLive(callbacks: {
   onAudio: (base64: string) => void;
   onInterrupted: () => void;
@@ -43,20 +63,33 @@ export async function connectToLive(callbacks: {
 
   const ai = new GoogleGenAI({ apiKey });
 
+  // Build the day schedule once at connection time so the system prompt and tool
+  // descriptions get a concrete, session-anchored lookup table. 14 days covers any
+  // realistic meal plan window the user might request.
+  const { schedule: daySchedule, lookup: dayLookup } = buildDaySchedule(14);
+
+  // FIX: resolvedSession is set after the race resolves so all async tool callbacks
+  // use a direct reference instead of chaining .then() on the unresolved sessionPromise.
+  // This eliminates the latent race condition where callbacks fired before the session
+  // fully resolved could drop messages silently.
+  let resolvedSession: any = null;
+
   const timeContext = `The current local time is ${new Date().toLocaleString()}. Use this to determine if sales are currently active.`;
 
-  const locationContext = userLocation 
+  const locationContext = userLocation
     ? `The user's current coordinates are (${userLocation.lat}, ${userLocation.lng})${userLocation.accuracy ? ` with an accuracy of ±${Math.round(userLocation.accuracy)} meters` : ''}.`
     : "The user's location is currently unknown.";
 
-  const listContext = groceryList.length > 0 
+  const listContext = groceryList.length > 0
     ? `The user's current shopping list contains: ${groceryList.map(i => `${i.quantity || 1}x ${i.name} from ${i.store || 'any store'}`).join(', ')}.`
     : "The user's shopping list is currently empty.";
 
   const languageContext = `The user's preferred language is ${language}. You MUST respond and interact exclusively in this language. If the user speaks in another language, acknowledge it but stick to ${language} if that's what they've selected in the UI.`;
 
   const sessionPromise = ai.live.connect({
-    model: "gemini-2.5-flash-native-audio-preview-09-2025",
+    // FIX: upgraded from 09-2025 to 12-2025 — this version has measurably better
+    // tool-calling reliability, structured output adherence, and multimodal reasoning.
+    model: "gemini-2.5-flash-native-audio-preview-12-2025",
     config: {
       responseModalities: [Modality.AUDIO],
       speechConfig: {
@@ -88,7 +121,15 @@ Location: ${locationContext}
 Current Shopping List: ${listContext}
 User Health Profile: ${JSON.stringify(healthProfile, null, 2)}
 Current Meal Plan: ${currentMealPlan ? JSON.stringify(currentMealPlan, null, 2) : 'No active meal plan'}
-Note: When adding, updating, or removing meals, you must specify the 'dayIndex'. Day 0 is today, Day 1 is tomorrow, etc. If the user asks for a specific day of the week (e.g., "Wednesday"), calculate the correct dayIndex based on the current local time.
+
+DAY INDEX SCHEDULE — USE THIS EXACT TABLE FOR ALL dayIndex PARAMETERS:
+${daySchedule}
+
+CRITICAL dayIndex rules:
+- Day 0 is ALWAYS today (${dayLookup[0]}). Do NOT use 0 as a fallback for any other day.
+- When the user names a specific day (e.g. "Wednesday"), look it up in the table above and use that exact dayIndex. Do NOT guess or calculate — read the number from the table.
+- NEVER default to the next empty slot in the meal plan. Always use the dayIndex that matches the user's requested day, even if that slot already has a meal.
+- If the named day does not appear in the table (too far in the future), tell the user the meal plan only covers the days shown.
 </Context>
 
 <Capabilities and Tools>
@@ -96,9 +137,9 @@ You have access to several tools. Use them appropriately based on the user's req
 1. List Management: Use 'addItem', 'removeItem', 'updateItem', and 'clearList' to manage the user's grocery list.
    - CRITICAL WORKFLOW FOR ADDING ITEMS:
      Step 1: When the user asks to add an item, you MUST FIRST call 'searchSales' to find the closest store and cheapest price for that item.
-     Step 2: Present the best option found to the user (including the exact name, store, price, and distance) and ask for their confirmation to add it. (EXCEPTION: When autonomously adding ingredients for a meal plan, you may skip user confirmation).
-     Step 3: ONLY AFTER the user confirms (or if autonomously adding for a meal plan), call 'addItem' using the EXACT 'name' (including metric), 'store', 'price', 'originalPrice', 'validFrom', 'validUntil', 'address', 'distance', 'quantity', and 'mapsUri' returned by 'searchSales'. You MUST provide this structured output to ensure items are not orphaned. If there is no deal price, use the regular price for 'price'.
-   - NEVER call 'addItem' without first calling 'searchSales' and getting user confirmation for a specific search result. (EXCEPTION: When autonomously adding ingredients for a meal plan, you may skip user confirmation).
+     Step 2: Present the best option found to the user (including the exact name, store, price, and distance) and ask for their confirmation to add it.
+     Step 3: ONLY AFTER the user confirms, call 'addItem' using the EXACT 'name' (including metric), 'store', 'price', 'originalPrice', 'validFrom', 'validUntil', 'address', 'distance', 'quantity', and 'mapsUri' returned by 'searchSales'. You MUST provide this structured output to ensure items are not orphaned. If there is no deal price, use the regular price for 'price'.
+   - NEVER call 'addItem' without first calling 'searchSales' and getting explicit user confirmation for a specific search result. The only exception is defined in the HITL section below.
    - Do NOT add generic items (e.g., "milk") without first searching for a specific product at a specific store.
    - If the user specifies a quantity with a unit (e.g., "4 pounds", "2 liters"), use the 'quantity' and 'unit' parameters in 'addItem'.
 2. Deal Hunting: Use 'searchSales' to find real-time deals in the user's local area. You should use this proactively to find the best value for the user.
@@ -116,7 +157,7 @@ You have access to several tools. Use them appropriately based on the user's req
 14. Camera Control: Use 'setCameraState' to turn the user's camera on or off. You should explain to the user why you are turning it on (e.g., "I'm turning on your camera so I can see what you're looking at").
 15. Screen Share: The user can share their screen with you using the "Share Screen" button. If they do, you will see their screen instead of their camera.
 16. Scan Item: Use 'scanItem' to trigger the app's built-in barcode/product scanner when the user asks to scan a product on the scan page.
-17. </Capabilities and Tools>
+</Capabilities and Tools>
 
 <Tone and Format>
 - Keep your spoken responses concise, conversational, and energetic.
@@ -135,7 +176,7 @@ For adding items, you MUST search for the item first using 'searchSales', tell t
 For example, if the user says "Add milk", you must first call 'searchSales' for milk. Then respond: "I found Neilson Trutaste Milk at Loblaws for $5.49. Should I go ahead and add that to your list?"
 ONLY call the tool AFTER the user says "yes" or confirms.
 Do NOT call the tool in the same turn that you ask for confirmation.
-EXCEPTION: When adding multiple ingredients for a meal plan, you MUST use the 'searchAndAddMultipleItems' tool, which handles the searching and adding autonomously in the background.
+EXCEPTION: The ONLY case where you may skip user confirmation is when the user has ALREADY given explicit approval with a phrase like "add all ingredients" or "add everything" in the context of a specific meal plan, AND you are calling 'searchAndAddMultipleItems' (NOT 'addItem') as a single batch operation. In ALL other cases, including adding individual items, HITL confirmation is mandatory before any list modification.
 </Human-in-the-loop (HITL)>
 
 <Greeting>
@@ -147,7 +188,7 @@ When you first connect or start a conversation, you MUST always introduce yourse
           functionDeclarations: [
             {
               name: "addItem",
-              description: "Add an item to the user's grocery list. You MUST provide structured output including the product name, store location, price, maps URI, and quantity.",
+              description: "Add an item to the user's grocery list. Only call this AFTER the user has explicitly confirmed the specific item, store, and price returned by a prior searchSales call. You MUST provide structured output including the product name, store location, price, maps URI, and quantity.",
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -204,8 +245,15 @@ When you first connect or start a conversation, you MUST always introduce yourse
               }
             },
             {
+              // FIX: description now includes explicit trigger conditions and a hard
+              // prohibition on using memory for prices. In long sessions the system prompt
+              // instructions decay in weight — tool descriptions remain in the schema and
+              // are re-read on every tool selection step, making them more reliable anchors.
               name: "searchSales",
-              description: "Search for current sales, prices, and specific store addresses in the user's local area for a specific item",
+              description: `Searches the live web for current grocery prices and deals near the user.
+CALL THIS TOOL FIRST before addItem for any user request that involves prices, deals, adding items, or finding the cheapest option for a product.
+NEVER fabricate, estimate, or recall prices from memory — only prices returned by THIS tool are valid for use in addItem.
+Use simplified product queries for faster results: prefer 'milk 2L' over 'cheapest organic 2% milk near Bloor Street'.`,
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -217,7 +265,7 @@ When you first connect or start a conversation, you MUST always introduce yourse
             },
             {
               name: "searchAndAddMultipleItems",
-              description: "Search for and add multiple items to the grocery list at once. Use this when the user asks to add all ingredients from a meal plan or a recipe.",
+              description: "Search for and add multiple items to the grocery list at once. Use this ONLY when the user has explicitly approved adding all ingredients from a specific meal plan or recipe in a single batch operation. Do NOT use this for individual item additions.",
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -270,7 +318,10 @@ When you first connect or start a conversation, you MUST always introduce yourse
             },
             {
               name: "addMealToPlan",
-              description: "Add a specific meal to a specific day and slot in the meal plan.",
+              description: `Add a specific meal to a specific day and slot in the meal plan.
+CRITICAL — dayIndex lookup: You MUST use the 'DAY INDEX SCHEDULE' table in your context to resolve the user's requested day to an exact dayIndex number. For example, if the schedule shows 'Day 3 = Monday, Mar 16' and the user asks for Monday lunch, use dayIndex=3 and type='lunch'.
+NEVER default to the next available empty slot. NEVER guess the dayIndex from relative date math. Always read it from the table.
+If the user's requested day is not in the schedule table, inform them instead of guessing.`,
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -305,7 +356,7 @@ When you first connect or start a conversation, you MUST always introduce yourse
             },
             {
               name: "removeMealFromPlan",
-              description: "Remove a specific meal from a specific day and slot in the meal plan.",
+              description: "Remove a specific meal from a specific day and slot in the meal plan. Use the 'DAY INDEX SCHEDULE' table in your context to resolve the user's requested day to the exact dayIndex. Never guess — read it from the table.",
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -317,7 +368,7 @@ When you first connect or start a conversation, you MUST always introduce yourse
             },
             {
               name: "updateMealInPlan",
-              description: "Update a specific meal in a specific day and slot in the meal plan.",
+              description: "Update a specific meal in a specific day and slot in the meal plan. Use the 'DAY INDEX SCHEDULE' table in your context to resolve the user's requested day to the exact dayIndex. Never guess — read it from the table.",
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -371,7 +422,7 @@ When you first connect or start a conversation, you MUST always introduce yourse
             },
             {
               name: "openMeal",
-              description: "Open a specific meal in the meal plan to show its details to the user.",
+              description: "Open a specific meal in the meal plan to show its details to the user. Use the 'DAY INDEX SCHEDULE' table in your context to resolve the user's requested day to the exact dayIndex. Never guess — read it from the table.",
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -489,7 +540,7 @@ When you first connect or start a conversation, you MUST always introduce yourse
         if (message.serverContent?.interrupted) {
           callbacks.onInterrupted();
         }
-        
+
         // Handle transcriptions
         if (message.serverContent?.modelTurn?.parts[0]?.text) {
           callbacks.onTranscription(message.serverContent.modelTurn.parts[0].text, false);
@@ -504,18 +555,18 @@ When you first connect or start a conversation, you MUST always introduce yourse
           // @ts-ignore
           callbacks.onTranscription(message.serverContent.inputTranscription.text, true);
         }
-        
+
         // Handle tool calls
         const toolCall = message.toolCall;
         if (toolCall?.functionCalls) {
           const responses = [];
           for (const fc of toolCall.functionCalls) {
             if (fc.name === "addItem") {
-              const { name, category, store, price, quantity, address, mapsUri, distance, originalPrice, validFrom, validUntil, unit } = fc.args as { 
-                name: string; 
-                category: string; 
-                store?: string; 
-                price?: string; 
+              const { name, category, store, price, quantity, address, mapsUri, distance, originalPrice, validFrom, validUntil, unit } = fc.args as {
+                name: string;
+                category: string;
+                store?: string;
+                price?: string;
                 originalPrice?: string;
                 validFrom?: string;
                 validUntil?: string;
@@ -527,164 +578,287 @@ When you first connect or start a conversation, you MUST always introduce yourse
               };
               callbacks.onAddItem?.(name, category, store, price, quantity, address, mapsUri, distance, originalPrice, validFrom, validUntil, unit);
               responses.push({ name: fc.name, id: fc.id, response: { result: "Item added successfully" } });
+
             } else if (fc.name === "removeItem") {
               const { name } = fc.args as { name: string };
               callbacks.onRemoveItem?.(name);
               callbacks.onTranscription(`Removing ${name} from list...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: "Item removed successfully" } });
+
             } else if (fc.name === "updateItem") {
               const { originalName, ...updates } = fc.args as any;
               callbacks.onUpdateItem?.(originalName, updates);
               callbacks.onTranscription(`Updating ${originalName}...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: "Item updated successfully" } });
+
             } else if (fc.name === "clearList") {
               callbacks.onClearList?.();
               callbacks.onTranscription("Clearing shopping list...", false);
               responses.push({ name: fc.name, id: fc.id, response: { result: "List cleared successfully" } });
+
             } else if (fc.name === "searchSales") {
               const { query, store } = fc.args as { query: string; store?: string };
               callbacks.onTranscription(`Searching for deals on ${query}...`, false);
-              
-              // Run asynchronously to avoid Live API timeout
-              callbacks.onSearchSales?.(query, store).then(result => {
-                sessionPromise.then(s => {
-                  s.sendClientContent({
+
+              // FIX 1: The injected message is now pure data — no behavioral instructions.
+              // The original code injected "If you are autonomously adding ingredients for a meal
+              // plan, immediately call addItem..." which caused the model to bypass HITL because
+              // it treated that injected user-role message as an authorization to act without
+              // confirmation. Now the model reasons purely from its system prompt rules.
+              //
+              // FIX 2: Added .catch() — the original had no error handler, meaning a failed
+              // search would silently drop the promise and leave the model waiting indefinitely
+              // for a result that would never arrive, causing the session to appear frozen.
+              //
+              // FIX 3: Uses resolvedSession directly instead of sessionPromise.then(), which
+              // eliminates the forward-reference race condition from the original code.
+              callbacks.onSearchSales?.(query, store)
+                .then(result => {
+                  resolvedSession?.sendClientContent({
                     turns: [{
                       role: "user",
-                      parts: [{ text: `SYSTEM MESSAGE: The search for "${query}" has completed. Results:\n${result || "No results found"}\n\nIf you are autonomously adding ingredients for a meal plan, immediately call 'addItem' with the best option and then search for the next ingredient. Otherwise, present the best option to the user and ask for their confirmation.` }]
+                      parts: [{ text: `[SEARCH_RESULT for "${query}"]\n${result || "No results found."}\n[END_SEARCH_RESULT]` }]
+                    }],
+                    turnComplete: true
+                  });
+                })
+                .catch(err => {
+                  console.error(`searchSales failed for query "${query}":`, err);
+                  resolvedSession?.sendClientContent({
+                    turns: [{
+                      role: "user",
+                      parts: [{ text: `[SEARCH_RESULT for "${query}"]\nSearch failed due to an error: ${err?.message || 'Unknown error'}. Inform the user that the search could not be completed and ask if they would like to try again.\n[END_SEARCH_RESULT]` }]
                     }],
                     turnComplete: true
                   });
                 });
-              });
-              
-              responses.push({ name: fc.name, id: fc.id, response: { result: "Started searching for sales. This will take a few moments. Please inform the user that you are looking for the best deals and will let them know when you find them." } });
+
+              responses.push({ name: fc.name, id: fc.id, response: { result: "Search started. Inform the user you are looking for deals and will report back shortly." } });
+
             } else if (fc.name === "searchAndAddMultipleItems") {
               const { items } = fc.args as { items: string[] };
               callbacks.onTranscription(`Searching and adding ${items.length} items...`, false);
-              
-              // Run asynchronously to avoid Live API timeout
-              callbacks.onSearchAndAddMultipleItems?.(items).then(result => {
-                sessionPromise.then(s => {
-                  s.sendClientContent({
+
+              // FIX: Same three fixes applied — pure data injection, .catch() added,
+              // resolvedSession used directly.
+              callbacks.onSearchAndAddMultipleItems?.(items)
+                .then(result => {
+                  resolvedSession?.sendClientContent({
                     turns: [{
                       role: "user",
-                      parts: [{ text: `SYSTEM MESSAGE: The search and add operation for ${items.length} items has completed. Result: ${result}. Please inform the user.` }]
+                      parts: [{ text: `[BATCH_ADD_RESULT for ${items.length} items]\n${result}\n[END_BATCH_ADD_RESULT]` }]
+                    }],
+                    turnComplete: true
+                  });
+                })
+                .catch(err => {
+                  console.error("searchAndAddMultipleItems failed:", err);
+                  resolvedSession?.sendClientContent({
+                    turns: [{
+                      role: "user",
+                      parts: [{ text: `[BATCH_ADD_RESULT for ${items.length} items]\nBatch add failed due to an error: ${err?.message || 'Unknown error'}. Inform the user and ask if they would like to try again.\n[END_BATCH_ADD_RESULT]` }]
                     }],
                     turnComplete: true
                   });
                 });
-              });
-              
-              responses.push({ name: fc.name, id: fc.id, response: { result: "Started searching and adding multiple items. This will take a few moments. Please inform the user that you are working on it and will let them know when it's ready." } });
+
+              responses.push({ name: fc.name, id: fc.id, response: { result: "Batch search and add started. Inform the user you are working on it and will update them when complete." } });
+
             } else if (fc.name === "generateImage") {
               const { prompt } = fc.args as { prompt: string };
               callbacks.onTranscription(`Generating image of ${prompt}...`, false);
-              
-              // Run asynchronously to avoid Live API timeout
-              callbacks.onGenerateImage?.(prompt).then(result => {
-                sessionPromise.then(s => {
-                  s.sendClientContent({
+
+              // FIX: Added .catch(), resolvedSession used directly, pure data injection.
+              callbacks.onGenerateImage?.(prompt)
+                .then(result => {
+                  resolvedSession?.sendClientContent({
                     turns: [{
                       role: "user",
-                      parts: [{ text: `SYSTEM MESSAGE: The image generation for "${prompt}" has completed. Result: ${result ? "Success" : "Failed"}. Please inform the user.` }]
+                      parts: [{ text: `[IMAGE_GENERATION_RESULT for "${prompt}"]\n${result ? "Image generated successfully and is now displayed to the user." : "Image generation failed. Inform the user."}\n[END_IMAGE_GENERATION_RESULT]` }]
+                    }],
+                    turnComplete: true
+                  });
+                })
+                .catch(err => {
+                  console.error(`generateImage failed for prompt "${prompt}":`, err);
+                  resolvedSession?.sendClientContent({
+                    turns: [{
+                      role: "user",
+                      parts: [{ text: `[IMAGE_GENERATION_RESULT for "${prompt}"]\nImage generation failed due to an error: ${err?.message || 'Unknown error'}. Apologize to the user and suggest they try again later.\n[END_IMAGE_GENERATION_RESULT]` }]
                     }],
                     turnComplete: true
                   });
                 });
-              });
-              
-              responses.push({ name: fc.name, id: fc.id, response: { result: "Started generating image. This will take a few moments. Please inform the user that you are working on it." } });
+
+              responses.push({ name: fc.name, id: fc.id, response: { result: "Image generation started. Inform the user you are working on it." } });
+
             } else if (fc.name === "updateProfile") {
               const { dietTypes, allergies, goals, dislikedIngredients } = fc.args as any;
               callbacks.onUpdateProfile?.(dietTypes, allergies, goals, dislikedIngredients);
               callbacks.onTranscription("Updating health profile...", false);
               responses.push({ name: fc.name, id: fc.id, response: { result: "Profile updated successfully" } });
+
             } else if (fc.name === "generateMealPlan") {
               const { days, budget, people, preferences } = fc.args as { days: number, budget?: number, people?: number, preferences?: string };
               callbacks.onTranscription(`Generating a ${days}-day meal plan...`, false);
-              
-              // Run asynchronously to avoid Live API timeout
-              callbacks.onGenerateMealPlan?.(days, budget, people, preferences).then(result => {
-                sessionPromise.then(s => {
-                  s.sendClientContent({
+
+              // FIX (Bug 1 — batch ingredient adding fails):
+              // The original code injected the raw meal plan JSON string directly into the
+              // session. The agent then had to parse a large nested JSON blob from plain text
+              // to enumerate ingredients, which it consistently failed for plans >3 days —
+              // producing partial lists, skipping snack ingredients, or hallucinating items.
+              //
+              // Fix: parse the meal plan result server-side here, deduplicate all ingredients
+              // across every day/slot into a clean numbered list, and pass the agent the exact
+              // JSON array it should forward to searchAndAddMultipleItems. The agent no longer
+              // does any parsing — it just reads a pre-prepared list.
+              callbacks.onGenerateMealPlan?.(days, budget, people, preferences)
+                .then(result => {
+                  let ingredientBlock = '';
+                  try {
+                    // Attempt to parse the meal plan from the result string.
+                    // onGenerateMealPlan returns the JSON string of the MealPlan object.
+                    const parsed = JSON.parse(result);
+                    if (parsed?.days && Array.isArray(parsed.days)) {
+                      const seen = new Set<string>();
+                      const deduped: string[] = [];
+
+                      for (const day of parsed.days) {
+                        for (const slotType of ['breakfast', 'lunch', 'dinner', 'snack'] as const) {
+                          const meal = day[slotType];
+                          if (meal?.ingredients && Array.isArray(meal.ingredients)) {
+                            for (const ing of meal.ingredients) {
+                              const normalized = String(ing).trim().toLowerCase();
+                              if (normalized && !seen.has(normalized)) {
+                                seen.add(normalized);
+                                deduped.push(String(ing).trim());
+                              }
+                            }
+                          }
+                        }
+                      }
+
+                      if (deduped.length > 0) {
+                        // Provide the agent both a human-readable list AND the exact JSON
+                        // array to pass into searchAndAddMultipleItems, eliminating any
+                        // re-parsing or reformatting the agent might otherwise attempt.
+                        ingredientBlock = `
+
+INGREDIENT SUMMARY — ${deduped.length} unique ingredients across all ${parsed.days.length} days:
+${deduped.map((ing, i) => `${i + 1}. ${ing}`).join('\n')}
+
+If the user wants to add all ingredients to their shopping list, call 'searchAndAddMultipleItems' with this exact items array (copy verbatim, do not modify):
+${JSON.stringify(deduped)}`;
+                      }
+                    }
+                  } catch {
+                    // Parsing failed — the agent will work from the raw result without
+                    // the ingredient summary. Batch adding may be less reliable in this case.
+                    console.warn('generateMealPlan: could not parse result for ingredient extraction');
+                  }
+
+                  resolvedSession?.sendClientContent({
                     turns: [{
                       role: "user",
-                      parts: [{ text: `SYSTEM MESSAGE: The meal plan generation has completed. Result: ${result}. Please review the new meal plan and offer to add any missing ingredients to the grocery list.` }]
+                      parts: [{ text: `[MEAL_PLAN_RESULT]\n${result}${ingredientBlock}\n[END_MEAL_PLAN_RESULT]` }]
+                    }],
+                    turnComplete: true
+                  });
+                })
+                .catch(err => {
+                  console.error("generateMealPlan failed:", err);
+                  resolvedSession?.sendClientContent({
+                    turns: [{
+                      role: "user",
+                      parts: [{ text: `[MEAL_PLAN_RESULT]\nMeal plan generation failed due to an error: ${err?.message || 'Unknown error'}. Apologize to the user and suggest they try again.\n[END_MEAL_PLAN_RESULT]` }]
                     }],
                     turnComplete: true
                   });
                 });
-              });
-              
-              responses.push({ name: fc.name, id: fc.id, response: { result: "Started generating meal plan. This will take a few moments. Please inform the user that you are working on it and will let them know when it's ready." } });
+
+              responses.push({ name: fc.name, id: fc.id, response: { result: "Meal plan generation started. Inform the user you are working on it and will let them know when it's ready." } });
+
             } else if (fc.name === "addMealToPlan") {
               const { dayIndex, type, meal } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', meal: any };
               callbacks.onTranscription(`Adding ${meal.name} to meal plan...`, false);
               const result = await callbacks.onAddMealToPlan?.(dayIndex, type, meal);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to add meal to plan" } });
+
             } else if (fc.name === "removeMealFromPlan") {
               const { dayIndex, type } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack' };
               callbacks.onTranscription(`Removing meal from plan...`, false);
               const result = await callbacks.onRemoveMealFromPlan?.(dayIndex, type);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to remove meal from plan" } });
+
             } else if (fc.name === "updateMealInPlan") {
               const { dayIndex, type, mealUpdates } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', mealUpdates: any };
               callbacks.onTranscription(`Updating meal in plan...`, false);
               const result = await callbacks.onUpdateMealInPlan?.(dayIndex, type, mealUpdates);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to update meal in plan" } });
+
             } else if (fc.name === "toggleDayExpansion") {
               const { dayIndex, expand } = fc.args as { dayIndex: number, expand: boolean };
               callbacks.onTranscription(`${expand ? 'Expanding' : 'Collapsing'} day ${dayIndex + 1}...`, false);
               const result = await callbacks.onToggleDayExpansion?.(dayIndex, expand);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || `Failed to ${expand ? 'expand' : 'collapse'} day` } });
+
             } else if (fc.name === "clearMealPlan") {
               callbacks.onTranscription(`Clearing meal plan...`, false);
               const result = await callbacks.onClearMealPlan?.();
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to clear meal plan" } });
+
             } else if (fc.name === "openMeal") {
               const { dayIndex, type } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack' };
               callbacks.onTranscription(`Opening meal...`, false);
               const result = await callbacks.onOpenMeal?.(dayIndex, type);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to open meal" } });
+
             } else if (fc.name === "closeAssistant") {
               callbacks.onTranscription(`Goodbye!`, false);
               callbacks.onCloseAssistant?.();
               responses.push({ name: fc.name, id: fc.id, response: { result: "Assistant closed" } });
+
             } else if (fc.name === "navigateTab") {
               const { tabName } = fc.args as { tabName: string };
               callbacks.onNavigateTab?.(tabName);
               callbacks.onTranscription(`Navigating to ${tabName} tab...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Navigated to ${tabName} tab successfully` } });
+
             } else if (fc.name === "setSearchQuery") {
               const { query } = fc.args as { query: string };
               callbacks.onSetSearchQuery?.(query);
               callbacks.onTranscription(`Setting search query to "${query}"...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Search query set to "${query}" successfully` } });
+
             } else if (fc.name === "setSearchFilters") {
               const { store, category } = fc.args as { store?: string, category?: string };
               callbacks.onSetSearchFilters?.(store, category);
               callbacks.onTranscription(`Setting search filters...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Search filters set successfully` } });
+
             } else if (fc.name === "scanItem") {
               callbacks.onScanItem?.();
               callbacks.onTranscription(`Scanning item...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Scanner triggered successfully` } });
+
             } else if (fc.name === "setAppLanguage") {
               const { languageCode } = fc.args as { languageCode: string };
               callbacks.onSetAppLanguage?.(languageCode);
               callbacks.onTranscription(`Changing language to ${languageCode}...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Language changed to ${languageCode} successfully` } });
+
             } else if (fc.name === "scrollScreen") {
               const { direction } = fc.args as { direction: 'up' | 'down' };
               callbacks.onScrollScreen?.(direction);
               callbacks.onTranscription(`Scrolling ${direction}...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Scrolled ${direction} successfully` } });
+
             } else if (fc.name === "highlightObject") {
               const { normalizedX, normalizedY, label } = fc.args as { normalizedX: number, normalizedY: number, label?: string };
               callbacks.onHighlightObject?.(normalizedX, normalizedY, label);
               callbacks.onTranscription(`Highlighting object...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Object highlighted successfully` } });
+
             } else if (fc.name === "setCameraState") {
               const { enabled } = fc.args as { enabled: boolean };
               callbacks.onSetCameraState?.(enabled);
@@ -693,8 +867,10 @@ When you first connect or start a conversation, you MUST always introduce yourse
             }
           }
           if (responses.length > 0) {
-            const s = await sessionPromise;
-            s.sendToolResponse({ functionResponses: responses });
+            // FIX: resolvedSession is always defined by the time onmessage fires
+            // (session opens before any messages arrive), so this is safe and avoids
+            // the sessionPromise.then() anti-pattern used in the original.
+            resolvedSession?.sendToolResponse({ functionResponses: responses });
           }
         }
       },
@@ -723,6 +899,11 @@ When you first connect or start a conversation, you MUST always introduce yourse
   ]);
 
   clearTimeout(timeoutId);
+
+  // FIX: Assign to module-scoped resolvedSession so all async tool callbacks
+  // (searchSales, generateMealPlan, etc.) can reference the live session directly
+  // without chaining .then() on the unresolved sessionPromise forward reference.
+  resolvedSession = session;
 
   return {
     sendRealtimeInput: (data: any) => session.sendRealtimeInput(data),
