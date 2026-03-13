@@ -77,6 +77,11 @@ export default function App() {
     }
     localStorage.setItem('dark-mode', darkMode.toString());
   }, [darkMode]);
+  useEffect(() => {
+    document.documentElement.lang = i18n.language || 'en';
+    document.documentElement.dir = i18n.dir();
+  }, [i18n.language]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStore, setSelectedStore] = useState<string | undefined>();
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
@@ -586,7 +591,7 @@ export default function App() {
             <SpeedDial
               direction="down"
               align="center"
-              mainIcon={<span className="text-xs font-bold uppercase">{i18n.language.split('-')[0]}</span>}
+              mainIcon={<span className="text-xs font-bold uppercase">{i18n.language === 'fr-CA' ? 'FR-CA' : (i18n.language || 'en').split('-')[0]}</span>}
               activeIcon={<X size={20} />}
               buttonClassName="w-11 h-11 glass rounded-full transition-all text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 !bg-transparent !shadow-none border border-slate-300 dark:border-white/10"
               actionClassName="px-4 py-2 text-xs"
@@ -603,7 +608,7 @@ export default function App() {
               ].map(lang => ({
                 name: lang.label,
                 icon: <span className="text-xs font-bold uppercase">{lang.code}</span>,
-                active: i18n.language.startsWith(lang.code),
+                active: i18n.language === lang.code || ((i18n.language || 'en').startsWith(lang.code) && !(lang.code === 'fr' && i18n.language === 'fr-CA')),
                 onClick: () => i18n.changeLanguage(lang.code)
               }))}
             />
@@ -755,7 +760,7 @@ export default function App() {
                               localStorage.setItem('user-postal-code', val);
                               debouncedSearch(searchQuery, selectedStore, selectedCategory, val);
                             }}
-                            placeholder="Enter Postal/Zip Code (e.g. M5V 3L9 or 90210)"
+                            placeholder={t('postal_placeholder')}
                             className="bg-transparent border-none outline-none text-sm font-medium w-full text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                           />
                         </div>
@@ -768,7 +773,7 @@ export default function App() {
                 <form onSubmit={handleSearch} role="search" className="relative group">
                   <input
                     type="text"
-                    placeholder="Find the best deals in your area..."
+                    placeholder={t('search_placeholder')}
                     aria-label={t('search_placeholder')}
                     value={searchQuery}
                     autoCorrect="on"
@@ -1758,11 +1763,11 @@ export default function App() {
       {/* Footer Info */}
       <footer className="max-w-md mx-auto px-6 pt-4 pb-32 text-center space-y-4">
         <div className="flex items-center justify-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-500">
-          <button className="hover:text-brand-600 transition-colors">Help</button>
+          <button className="hover:text-brand-600 transition-colors">{t('footer_help')}</button>
           <div className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
-          <button className="hover:text-brand-600 transition-colors">Privacy</button>
+          <button className="hover:text-brand-600 transition-colors">{t('footer_privacy')}</button>
           <div className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
-          <button className="hover:text-brand-600 transition-colors">Terms</button>
+          <button className="hover:text-brand-600 transition-colors">{t('footer_terms')}</button>
         </div>
         <p className="text-[10px] text-slate-600 dark:text-slate-500 font-medium">
           &copy; {new Date().getFullYear()} Chanoch. AI-powered grocery deals.

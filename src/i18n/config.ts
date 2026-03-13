@@ -1,6 +1,6 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
 
 const resources = {
   en: {
@@ -26,7 +26,8 @@ const resources = {
       total_estimated: "Total Estimated",
       clear_list: "Clear List",
       empty_list_title: "Your list is empty",
-      empty_list_subtitle: "Start adding items from the search tab or use the voice assistant.",
+      empty_list_subtitle:
+        "Start adding items from the search tab or use the voice assistant.",
       clear_confirm_title: "Clear entire list?",
       clear_confirm_subtitle: "This action cannot be undone.",
       cancel: "Cancel",
@@ -97,7 +98,8 @@ const resources = {
       meal_days: "Days",
       meal_regenerate: "Regenerate",
       meal_ready_title: "Ready to plan your meals?",
-      meal_ready_subtitle: "We'll create a personalized meal plan using the items in your grocery list, tailored to your health profile.",
+      meal_ready_subtitle:
+        "We'll create a personalized meal plan using the items in your grocery list, tailored to your health profile.",
       meal_generate_btn: "Generate Meal Plan",
       meal_crafting_title: "Crafting your menu...",
       meal_crafting_subtitle: "Analyzing your groceries and health profile.",
@@ -118,8 +120,12 @@ const resources = {
       profile_disliked: "Disliked Ingredients (comma-separated)",
       profile_disliked_placeholder: "e.g., Cilantro, Mushrooms, Olives",
       profile_save_btn: "Save Profile",
-      profile_saved: "Saved!"
-    }
+      profile_saved: "Saved!",
+      postal_placeholder: "Enter Postal/Zip Code (e.g. M5V 3L9 or 90210)",
+      footer_help: "Help",
+      footer_privacy: "Privacy",
+      footer_terms: "Terms",
+    },
   },
   zh: {
     translation: {
@@ -215,7 +221,8 @@ const resources = {
       meal_days: "天数",
       meal_regenerate: "重新生成",
       meal_ready_title: "准备好计划您的膳食了吗？",
-      meal_ready_subtitle: "我们将使用您的杂货清单中的商品，为您量身定制个性化的膳食计划。",
+      meal_ready_subtitle:
+        "我们将使用您的杂货清单中的商品，为您量身定制个性化的膳食计划。",
       meal_generate_btn: "生成膳食计划",
       meal_crafting_title: "正在制定您的菜单...",
       meal_crafting_subtitle: "正在分析您的杂货和健康档案。",
@@ -236,8 +243,12 @@ const resources = {
       profile_disliked: "不喜欢的食材（用逗号分隔）",
       profile_disliked_placeholder: "例如：香菜，蘑菇，橄榄",
       profile_save_btn: "保存档案",
-      profile_saved: "已保存！"
-    }
+      profile_saved: "已保存！",
+      postal_placeholder: "输入邮政编码 (例如 M5V 3L9 或 90210)",
+      footer_help: "帮助",
+      footer_privacy: "隐私",
+      footer_terms: "条款",
+    },
   },
   es: {
     translation: {
@@ -262,7 +273,8 @@ const resources = {
       total_estimated: "Total Estimado",
       clear_list: "Limpiar Lista",
       empty_list_title: "Tu lista está vacía",
-      empty_list_subtitle: "Comienza a añadir artículos desde la pestaña de búsqueda o usa el asistente de voz.",
+      empty_list_subtitle:
+        "Comienza a añadir artículos desde la pestaña de búsqueda o usa el asistente de voz.",
       clear_confirm_title: "¿Limpiar toda la lista?",
       clear_confirm_subtitle: "Esta acción no se puede deshacer.",
       cancel: "Cancelar",
@@ -316,7 +328,8 @@ const resources = {
       voice_active: "Voz Activa",
       voice_inactive: "Voz Inactiva",
       scan_title: "Escáner Inteligente",
-      scan_subtitle: "Escanea artículos para comprobar su alineación con el perfil de salud",
+      scan_subtitle:
+        "Escanea artículos para comprobar su alineación con el perfil de salud",
       scan_item_btn: "Escanear Artículo",
       scan_another_btn: "Escanear Otro Artículo",
       scan_analyzing: "Analizando artículo...",
@@ -333,7 +346,8 @@ const resources = {
       meal_days: "Días",
       meal_regenerate: "Regenerar",
       meal_ready_title: "¿Listo para planificar tus comidas?",
-      meal_ready_subtitle: "Crearemos un plan de comidas personalizado utilizando los artículos de tu lista de compras, adaptado a tu perfil de salud.",
+      meal_ready_subtitle:
+        "Crearemos un plan de comidas personalizado utilizando los artículos de tu lista de compras, adaptado a tu perfil de salud.",
       meal_generate_btn: "Generar Plan de Comidas",
       meal_crafting_title: "Elaborando tu menú...",
       meal_crafting_subtitle: "Analizando tus compras y perfil de salud.",
@@ -350,12 +364,17 @@ const resources = {
       profile_allergies: "Alergias (separadas por comas)",
       profile_allergies_placeholder: "ej., Maní, Mariscos, Lácteos",
       profile_goals: "Objetivos de Salud (separados por comas)",
-      profile_goals_placeholder: "ej., Pérdida de peso, Alto en proteínas, Bajo en azúcar",
+      profile_goals_placeholder:
+        "ej., Pérdida de peso, Alto en proteínas, Bajo en azúcar",
       profile_disliked: "Ingredientes que no te gustan (separados por comas)",
       profile_disliked_placeholder: "ej., Cilantro, Champiñones, Aceitunas",
       profile_save_btn: "Guardar Perfil",
-      profile_saved: "¡Guardado!"
-    }
+      profile_saved: "¡Guardado!",
+      postal_placeholder: "Ingrese el código postal (ej. M5V 3L9 o 90210)",
+      footer_help: "Ayuda",
+      footer_privacy: "Privacidad",
+      footer_terms: "Términos",
+    },
   },
   fr: {
     translation: {
@@ -380,7 +399,8 @@ const resources = {
       total_estimated: "Total Estimé",
       clear_list: "Effacer la liste",
       empty_list_title: "Votre liste est vide",
-      empty_list_subtitle: "Commencez à ajouter des articles depuis l'onglet de recherche ou utilisez l'assistant vocal.",
+      empty_list_subtitle:
+        "Commencez à ajouter des articles depuis l'onglet de recherche ou utilisez l'assistant vocal.",
       clear_confirm_title: "Effacer toute la liste ?",
       clear_confirm_subtitle: "Cette action est irréversible.",
       cancel: "Annuler",
@@ -434,7 +454,8 @@ const resources = {
       voice_active: "Voix Active",
       voice_inactive: "Voix Inactive",
       scan_title: "Scanner Intelligent",
-      scan_subtitle: "Scannez des articles pour vérifier leur alignement avec votre profil de santé",
+      scan_subtitle:
+        "Scannez des articles pour vérifier leur alignement avec votre profil de santé",
       scan_item_btn: "Scanner l'Article",
       scan_another_btn: "Scanner un Autre Article",
       scan_analyzing: "Analyse de l'article...",
@@ -451,10 +472,12 @@ const resources = {
       meal_days: "Jours",
       meal_regenerate: "Régénérer",
       meal_ready_title: "Prêt à planifier vos repas ?",
-      meal_ready_subtitle: "Nous allons créer un plan de repas personnalisé en utilisant les articles de votre liste de courses, adapté à votre profil de santé.",
+      meal_ready_subtitle:
+        "Nous allons créer un plan de repas personnalisé en utilisant les articles de votre liste de courses, adapté à votre profil de santé.",
       meal_generate_btn: "Générer le Plan de Repas",
       meal_crafting_title: "Élaboration de votre menu...",
-      meal_crafting_subtitle: "Analyse de vos courses et de votre profil de santé.",
+      meal_crafting_subtitle:
+        "Analyse de vos courses et de votre profil de santé.",
       meal_day: "Jour",
       meal_breakfast: "Petit-déjeuner",
       meal_lunch: "Déjeuner",
@@ -466,16 +489,22 @@ const resources = {
       profile_diet_type: "Type de Régime",
       profile_diet_placeholder: "ex., Végan, Céto, Sans gluten",
       profile_allergies: "Allergies (séparées par des virgules)",
-      profile_allergies_placeholder: "ex., Arachides, Crustacés, Produits laitiers",
+      profile_allergies_placeholder:
+        "ex., Arachides, Crustacés, Produits laitiers",
       profile_goals: "Objectifs de Santé (séparés par des virgules)",
-      profile_goals_placeholder: "ex., Perte de poids, Riche en protéines, Faible en sucre",
+      profile_goals_placeholder:
+        "ex., Perte de poids, Riche en protéines, Faible en sucre",
       profile_disliked: "Ingrédients Détestés (séparés par des virgules)",
       profile_disliked_placeholder: "ex., Coriandre, Champignons, Olives",
       profile_save_btn: "Enregistrer le Profil",
-      profile_saved: "Enregistré !"
-    }
+      profile_saved: "Enregistré !",
+      postal_placeholder: "Entrez le code postal (ex. M5V 3L9 ou 90210)",
+      footer_help: "Aide",
+      footer_privacy: "Confidentialité",
+      footer_terms: "Conditions",
+    },
   },
-  'fr-CA': {
+  "fr-CA": {
     translation: {
       app_name: "Chanoch",
       app_subtitle: "En direct dans votre région",
@@ -498,7 +527,8 @@ const resources = {
       total_estimated: "Total Estimé",
       clear_list: "Effacer la liste",
       empty_list_title: "Votre liste est vide",
-      empty_list_subtitle: "Commencez à ajouter des articles depuis l'onglet de recherche ou utilisez l'assistant vocal.",
+      empty_list_subtitle:
+        "Commencez à ajouter des articles depuis l'onglet de recherche ou utilisez l'assistant vocal.",
       clear_confirm_title: "Effacer toute la liste ?",
       clear_confirm_subtitle: "Cette action est irréversible.",
       cancel: "Annuler",
@@ -552,7 +582,8 @@ const resources = {
       voice_active: "Voix Active",
       voice_inactive: "Voix Inactive",
       scan_title: "Scanner Intelligent",
-      scan_subtitle: "Scannez des articles pour vérifier leur alignement avec votre profil de santé",
+      scan_subtitle:
+        "Scannez des articles pour vérifier leur alignement avec votre profil de santé",
       scan_item_btn: "Scanner l'Article",
       scan_another_btn: "Scanner un Autre Article",
       scan_analyzing: "Analyse de l'article...",
@@ -569,10 +600,12 @@ const resources = {
       meal_days: "Jours",
       meal_regenerate: "Régénérer",
       meal_ready_title: "Prêt à planifier vos repas ?",
-      meal_ready_subtitle: "Nous allons créer un plan de repas personnalisé en utilisant les articles de votre liste de courses, adapté à votre profil de santé.",
+      meal_ready_subtitle:
+        "Nous allons créer un plan de repas personnalisé en utilisant les articles de votre liste de courses, adapté à votre profil de santé.",
       meal_generate_btn: "Générer le Plan de Repas",
       meal_crafting_title: "Élaboration de votre menu...",
-      meal_crafting_subtitle: "Analyse de vos courses et de votre profil de santé.",
+      meal_crafting_subtitle:
+        "Analyse de vos courses et de votre profil de santé.",
       meal_day: "Jour",
       meal_breakfast: "Petit-déjeuner",
       meal_lunch: "Déjeuner",
@@ -584,14 +617,20 @@ const resources = {
       profile_diet_type: "Type de Régime",
       profile_diet_placeholder: "ex., Végan, Céto, Sans gluten",
       profile_allergies: "Allergies (séparées par des virgules)",
-      profile_allergies_placeholder: "ex., Arachides, Crustacés, Produits laitiers",
+      profile_allergies_placeholder:
+        "ex., Arachides, Crustacés, Produits laitiers",
       profile_goals: "Objectifs de Santé (séparés par des virgules)",
-      profile_goals_placeholder: "ex., Perte de poids, Riche en protéines, Faible en sucre",
+      profile_goals_placeholder:
+        "ex., Perte de poids, Riche en protéines, Faible en sucre",
       profile_disliked: "Ingrédients Détestés (séparés par des virgules)",
       profile_disliked_placeholder: "ex., Coriandre, Champignons, Olives",
       profile_save_btn: "Enregistrer le Profil",
-      profile_saved: "Enregistré !"
-    }
+      profile_saved: "Enregistré !",
+      postal_placeholder: "Entrez le code postal (ex. M5V 3L9 ou 90210)",
+      footer_help: "Aide",
+      footer_privacy: "Confidentialité",
+      footer_terms: "Conditions",
+    },
   },
   pt: {
     translation: {
@@ -616,7 +655,8 @@ const resources = {
       total_estimated: "Total Estimado",
       clear_list: "Limpar Lista",
       empty_list_title: "Sua lista está vazia",
-      empty_list_subtitle: "Comece a adicionar itens da aba de busca ou use o assistente de voz.",
+      empty_list_subtitle:
+        "Comece a adicionar itens da aba de busca ou use o assistente de voz.",
       clear_confirm_title: "Limpar toda a lista?",
       clear_confirm_subtitle: "Esta ação não pode ser desfeita.",
       cancel: "Cancelar",
@@ -670,7 +710,8 @@ const resources = {
       voice_active: "Voz Ativa",
       voice_inactive: "Voz Inativa",
       scan_title: "Scanner Inteligente",
-      scan_subtitle: "Escaneie itens para verificar o alinhamento com o perfil de saúde",
+      scan_subtitle:
+        "Escaneie itens para verificar o alinhamento com o perfil de saúde",
       scan_item_btn: "Escanear Item",
       scan_another_btn: "Escanear Outro Item",
       scan_analyzing: "Analisando item...",
@@ -687,7 +728,8 @@ const resources = {
       meal_days: "Dias",
       meal_regenerate: "Regenerar",
       meal_ready_title: "Pronto para planejar suas refeições?",
-      meal_ready_subtitle: "Criaremos um plano de refeições personalizado usando os itens da sua lista de compras, adaptado ao seu perfil de saúde.",
+      meal_ready_subtitle:
+        "Criaremos um plano de refeições personalizado usando os itens da sua lista de compras, adaptado ao seu perfil de saúde.",
       meal_generate_btn: "Gerar Plano de Refeições",
       meal_crafting_title: "Elaborando seu menu...",
       meal_crafting_subtitle: "Analisando suas compras e perfil de saúde.",
@@ -704,12 +746,17 @@ const resources = {
       profile_allergies: "Alergias (separadas por vírgulas)",
       profile_allergies_placeholder: "ex., Amendoim, Marisco, Laticínios",
       profile_goals: "Objetivos de Saúde (separados por vírgulas)",
-      profile_goals_placeholder: "ex., Perda de peso, Rico em proteínas, Baixo em açúcar",
+      profile_goals_placeholder:
+        "ex., Perda de peso, Rico em proteínas, Baixo em açúcar",
       profile_disliked: "Ingredientes que não gosta (separados por vírgulas)",
       profile_disliked_placeholder: "ex., Coentro, Cogumelos, Azeitonas",
       profile_save_btn: "Salvar Perfil",
-      profile_saved: "Salvo!"
-    }
+      profile_saved: "Salvo!",
+      postal_placeholder: "Insira o código postal (ex. M5V 3L9 ou 90210)",
+      footer_help: "Ajuda",
+      footer_privacy: "Privacidade",
+      footer_terms: "Termos",
+    },
   },
   hi: {
     translation: {
@@ -734,7 +781,8 @@ const resources = {
       total_estimated: "कुल अनुमानित",
       clear_list: "सूची साफ़ करें",
       empty_list_title: "आपकी सूची खाली है",
-      empty_list_subtitle: "खोज टैब से आइटम जोड़ना शुरू करें या वॉयस असिस्टेंट का उपयोग करें।",
+      empty_list_subtitle:
+        "खोज टैब से आइटम जोड़ना शुरू करें या वॉयस असिस्टेंट का उपयोग करें।",
       clear_confirm_title: "पूरी सूची साफ़ करें?",
       clear_confirm_subtitle: "यह क्रिया पूर्ववत नहीं की जा सकती।",
       cancel: "रद्द करें",
@@ -788,7 +836,8 @@ const resources = {
       voice_active: "वॉयस सक्रिय",
       voice_inactive: "वॉयस निष्क्रिय",
       scan_title: "स्मार्ट स्कैनर",
-      scan_subtitle: "स्वास्थ्य प्रोफ़ाइल संरेखण की जांच करने के लिए आइटम स्कैन करें",
+      scan_subtitle:
+        "स्वास्थ्य प्रोफ़ाइल संरेखण की जांच करने के लिए आइटम स्कैन करें",
       scan_item_btn: "आइटम स्कैन करें",
       scan_another_btn: "एक और आइटम स्कैन करें",
       scan_analyzing: "आइटम का विश्लेषण कर रहा है...",
@@ -805,10 +854,12 @@ const resources = {
       meal_days: "दिन",
       meal_regenerate: "पुनः उत्पन्न करें",
       meal_ready_title: "क्या आप अपने भोजन की योजना बनाने के लिए तैयार हैं?",
-      meal_ready_subtitle: "हम आपकी स्वास्थ्य प्रोफ़ाइल के अनुरूप आपकी किराने की सूची में मौजूद वस्तुओं का उपयोग करके एक व्यक्तिगत भोजन योजना बनाएंगे।",
+      meal_ready_subtitle:
+        "हम आपकी स्वास्थ्य प्रोफ़ाइल के अनुरूप आपकी किराने की सूची में मौजूद वस्तुओं का उपयोग करके एक व्यक्तिगत भोजन योजना बनाएंगे।",
       meal_generate_btn: "भोजन योजना बनाएं",
       meal_crafting_title: "आपका मेनू तैयार किया जा रहा है...",
-      meal_crafting_subtitle: "आपके किराने के सामान और स्वास्थ्य प्रोफ़ाइल का विश्लेषण कर रहा है।",
+      meal_crafting_subtitle:
+        "आपके किराने के सामान और स्वास्थ्य प्रोफ़ाइल का विश्लेषण कर रहा है।",
       meal_day: "दिन",
       meal_breakfast: "नाश्ता",
       meal_lunch: "दोपहर का भोजन",
@@ -826,8 +877,12 @@ const resources = {
       profile_disliked: "नापसंद सामग्री (अल्पविराम से अलग)",
       profile_disliked_placeholder: "उदा., धनिया, मशरूम, जैतून",
       profile_save_btn: "प्रोफ़ाइल सहेजें",
-      profile_saved: "सहेजा गया!"
-    }
+      profile_saved: "सहेजा गया!",
+      postal_placeholder: "पिन/ज़िप कोड दर्ज करें (उदा. M5V 3L9 या 90210)",
+      footer_help: "सहायता",
+      footer_privacy: "गोपनीयता",
+      footer_terms: "शर्तें",
+    },
   },
   ar: {
     translation: {
@@ -852,7 +907,8 @@ const resources = {
       total_estimated: "الإجمالي التقديري",
       clear_list: "مسح القائمة",
       empty_list_title: "قائمتك فارغة",
-      empty_list_subtitle: "ابدأ بإضافة عناصر من علامة تبويب البحث أو استخدم المساعد الصوتي.",
+      empty_list_subtitle:
+        "ابدأ بإضافة عناصر من علامة تبويب البحث أو استخدم المساعد الصوتي.",
       clear_confirm_title: "مسح القائمة بالكامل؟",
       clear_confirm_subtitle: "لا يمكن التراجع عن هذا الإجراء.",
       cancel: "إلغاء",
@@ -923,7 +979,8 @@ const resources = {
       meal_days: "أيام",
       meal_regenerate: "إعادة إنشاء",
       meal_ready_title: "هل أنت مستعد لتخطيط وجباتك؟",
-      meal_ready_subtitle: "سنقوم بإنشاء خطة وجبات مخصصة باستخدام العناصر الموجودة في قائمة البقالة الخاصة بك، ومصممة خصيصًا لملفك الصحي.",
+      meal_ready_subtitle:
+        "سنقوم بإنشاء خطة وجبات مخصصة باستخدام العناصر الموجودة في قائمة البقالة الخاصة بك، ومصممة خصيصًا لملفك الصحي.",
       meal_generate_btn: "إنشاء خطة الوجبات",
       meal_crafting_title: "جاري إعداد قائمتك...",
       meal_crafting_subtitle: "جاري تحليل مشترياتك وملفك الصحي.",
@@ -938,14 +995,20 @@ const resources = {
       profile_diet_type: "نوع النظام الغذائي",
       profile_diet_placeholder: "مثل، نباتي، كيتو، خالي من الغلوتين",
       profile_allergies: "الحساسية (مفصولة بفواصل)",
-      profile_allergies_placeholder: "مثل، الفول السوداني، المحار، منتجات الألبان",
+      profile_allergies_placeholder:
+        "مثل، الفول السوداني، المحار، منتجات الألبان",
       profile_goals: "الأهداف الصحية (مفصولة بفواصل)",
-      profile_goals_placeholder: "مثل، فقدان الوزن، نسبة عالية من البروتين، قليل السكر",
+      profile_goals_placeholder:
+        "مثل، فقدان الوزن، نسبة عالية من البروتين، قليل السكر",
       profile_disliked: "المكونات غير المفضلة (مفصولة بفواصل)",
       profile_disliked_placeholder: "مثل، الكزبرة، الفطر، الزيتون",
       profile_save_btn: "حفظ الملف",
-      profile_saved: "تم الحفظ!"
-    }
+      profile_saved: "تم الحفظ!",
+      postal_placeholder: "أدخل الرمز البريدي (مثل M5V 3L9 أو 90210)",
+      footer_help: "مساعدة",
+      footer_privacy: "الخصوصية",
+      footer_terms: "الشروط",
+    },
   },
   pnb: {
     translation: {
@@ -970,7 +1033,8 @@ const resources = {
       total_estimated: "کل تخمینہ",
       clear_list: "لسٹ صاف کرو",
       empty_list_title: "تہاڈی لسٹ خالی ہے",
-      empty_list_subtitle: "تلاش ٹیب توں چیزاں پاؤنا شروع کرو یا وائس اسسٹنٹ استعمال کرو۔",
+      empty_list_subtitle:
+        "تلاش ٹیب توں چیزاں پاؤنا شروع کرو یا وائس اسسٹنٹ استعمال کرو۔",
       clear_confirm_title: "پوری لسٹ صاف کریئے؟",
       clear_confirm_subtitle: "ایہ عمل واپس نہیں ہو سکدا۔",
       cancel: "منسوخ",
@@ -1041,10 +1105,12 @@ const resources = {
       meal_days: "دن",
       meal_regenerate: "دوبارہ بناؤ",
       meal_ready_title: "کیہ تسیں اپنے کھانے دی منصوبہ بندی لئی تیار او؟",
-      meal_ready_subtitle: "اسیں تہاڈی صحت دی پروفائل دے مطابق تہاڈی سودا سلف دی لسٹ وچ موجود چیزاں استعمال کر کے اک ذاتی کھانے دا منصوبہ بناواں گے۔",
+      meal_ready_subtitle:
+        "اسیں تہاڈی صحت دی پروفائل دے مطابق تہاڈی سودا سلف دی لسٹ وچ موجود چیزاں استعمال کر کے اک ذاتی کھانے دا منصوبہ بناواں گے۔",
       meal_generate_btn: "کھانے دا منصوبہ بناؤ",
       meal_crafting_title: "تہاڈا مینو تیار ہو رہا ہے...",
-      meal_crafting_subtitle: "تہاڈے سودا سلف تے صحت دی پروفائل دا تجزیہ ہو رہا ہے۔",
+      meal_crafting_subtitle:
+        "تہاڈے سودا سلف تے صحت دی پروفائل دا تجزیہ ہو رہا ہے۔",
       meal_day: "دن",
       meal_breakfast: "ناشتا",
       meal_lunch: "دوپہر دا کھانا",
@@ -1062,9 +1128,13 @@ const resources = {
       profile_disliked: "ناپسندیدہ اجزاء (کامے نال وکھ کیتے گئے)",
       profile_disliked_placeholder: "جیویں، دھنیا، کھمباں، زیتون",
       profile_save_btn: "پروفائل محفوظ کرو",
-      profile_saved: "محفوظ ہو گیا!"
-    }
-  }
+      profile_saved: "محفوظ ہو گیا!",
+      postal_placeholder: "پوسٹل/زپ کوڈ درج کرو (جیویں M5V 3L9 یا 90210)",
+      footer_help: "مدد",
+      footer_privacy: "پرائیویسی",
+      footer_terms: "شرائط",
+    },
+  },
 };
 
 i18n
@@ -1072,10 +1142,15 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'en',
+    fallbackLng: "en",
+    supportedLngs: ["en", "zh", "es", "fr", "fr-CA", "pt", "hi", "ar", "pnb"],
+    detection: {
+      order: ["querystring", "localStorage", "navigator", "htmlTag"],
+      caches: ["localStorage"],
+    },
     interpolation: {
-      escapeValue: false
-    }
+      escapeValue: false,
+    },
   });
 
 export default i18n;
