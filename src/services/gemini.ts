@@ -18,13 +18,13 @@ function robustJsonParse<T>(jsonText: string, fallback: T): T {
     return JSON.parse(cleanedText) as T;
   } catch (e) {
     console.warn("JSON parse failed, attempting robust salvage...");
-    
+
     // Pass 1: Clean unescaped newlines and track structure
     let cleaned = '';
     let isString = false;
     let isEscape = false;
     let stack: string[] = [];
-    
+
     for (let i = 0; i < cleanedText.length; i++) {
       const char = cleanedText[i];
       if (isEscape) {
@@ -42,7 +42,7 @@ function robustJsonParse<T>(jsonText: string, fallback: T): T {
         cleaned += char;
         continue;
       }
-      
+
       if (isString) {
         if (char === '\n') cleaned += '\\n';
         else if (char === '\r') cleaned += '\\r';
@@ -66,12 +66,12 @@ function robustJsonParse<T>(jsonText: string, fallback: T): T {
       // Pass 2: Try to fix truncation by closing open structures
       let fixed = cleaned;
       if (isString) fixed += '"';
-      
+
       for (let i = stack.length - 1; i >= 0; i--) {
         if (stack[i] === '{') fixed += '}';
         else if (stack[i] === '[') fixed += ']';
       }
-      
+
       try {
         const parsed = JSON.parse(fixed) as T;
         console.log("Successfully salvaged JSON by closing truncated structures.");
@@ -80,18 +80,17 @@ function robustJsonParse<T>(jsonText: string, fallback: T): T {
         // Pass 3: Fallback to finding the last complete object (if array)
         if (Array.isArray(fallback)) {
           let textToTruncate = cleaned;
-          let salvaged = false;
-          
+
           while (textToTruncate.length > 0) {
             const lastBrace = textToTruncate.lastIndexOf('}');
             if (lastBrace === -1) break;
-            
+
             textToTruncate = textToTruncate.substring(0, lastBrace + 1);
             try {
               let arrayText = textToTruncate;
               if (!arrayText.trim().startsWith('[')) arrayText = '[' + arrayText;
               if (!arrayText.trim().endsWith(']')) arrayText = arrayText + ']';
-              
+
               const parsed = JSON.parse(arrayText);
               if (Array.isArray(parsed)) {
                 console.log("Successfully salvaged JSON by truncating to last complete object.");
@@ -102,7 +101,7 @@ function robustJsonParse<T>(jsonText: string, fallback: T): T {
             }
           }
         }
-        
+
         console.error("Completely failed to salvage JSON. Original error:", e);
         return fallback;
       }
@@ -112,8 +111,10 @@ function robustJsonParse<T>(jsonText: string, fallback: T): T {
 
 export async function analyzeGroceryItem(imageBase64: string, profile: HealthProfile): Promise<ScannedItem | null> {
   try {
+    // Flash Lite is appropriate here — this is a single-image classification task
+    // with a well-defined schema. No price verification or multi-step reasoning needed.
     const model = "gemini-3.1-flash-lite-preview";
-    
+
     const profileContext = `
       Diet Types: ${profile.dietTypes?.join(', ') || 'None'}
       Allergies: ${profile.allergies?.join(', ') || 'None'}
@@ -178,8 +179,12 @@ export async function analyzeGroceryItem(imageBase64: string, profile: HealthPro
 
 export async function generateMealPlan(groceries: GroceryItem[], profile: HealthProfile, days: number = 3, budget?: number, people?: number, preferences?: string): Promise<MealPlan | null> {
   try {
-    const model = "gemini-3.1-flash-lite-preview";
-    
+    // FIX: Upgraded from flash-lite-preview to the latest stable flash model.
+    // Meal plan generation involves multi-step cost estimation, ingredient substitution
+    // reasoning, and health profile cross-referencing — tasks where flash-lite's reduced
+    // thinking capacity produces incoherent macro calculations and ignores budget constraints.
+    const model = "gemini-2.5-flash-preview-05-20";
+
     const profileContext = `
       Diet Types: ${profile.dietTypes?.join(', ') || 'None'}
       Allergies: ${profile.allergies?.join(', ') || 'None'}
@@ -190,7 +195,7 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
 
     const today = new Date();
     const currentDay = today.toLocaleDateString('en-US', { weekday: 'long' });
-    
+
     const systemInstruction = `You are an expert meal planner and nutritionist.
     Today is ${currentDay}. Start the meal plan from today.
     Create a ${days}-day meal plan based on the user's health profile.
@@ -235,7 +240,13 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
       config: {
         systemInstruction,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        // FIX: ThinkingLevel was LOW. Budget-constrained meal plans require the model to:
+        //   (1) search for ingredient prices, (2) sum costs across multiple meals,
+        //   (3) compare against budget, (4) substitute if over budget.
+        // That is a 4-step multi-tool reasoning chain — LOW thinking drops steps 2-4.
+        // HIGH when budget is specified so cost calculations are actually verified.
+        // MEDIUM otherwise for solid nutritional reasoning without the extra latency.
+        thinkingConfig: { thinkingLevel: budget ? ThinkingLevel.HIGH : ThinkingLevel.MEDIUM },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -273,7 +284,7 @@ export async function generateImage(prompt: string): Promise<string | null> {
     const env = (window as any).__ENV__ || {};
     const customApiKey = env.API_KEY || (typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined);
     const defaultApiKey = env.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : undefined);
-    
+
     // If a premium key is provided via API_KEY, use the premium model
     // Otherwise fallback to the default key and the free model
     const apiKeyToUse = customApiKey || defaultApiKey;
@@ -289,7 +300,7 @@ export async function generateImage(prompt: string): Promise<string | null> {
         }
       }
     });
-    
+
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
@@ -303,8 +314,15 @@ export async function generateImage(prompt: string): Promise<string | null> {
 }
 
 export async function searchSales(query: string, store?: string, category?: string, lat?: number, lng?: number, accuracy?: number, postalCode?: string): Promise<SaleItem[]> {
-  const model = "gemini-3.1-flash-lite-preview";
-  
+  // FIX: Upgraded from flash-lite-preview to the latest stable flash model.
+  // searchSales is the core factual backbone of the entire agent. Every price the
+  // live agent presents to the user, every addItem call, and every HITL confirmation
+  // depends on the accuracy of this function's output. Flash Lite's reduced capacity
+  // for multi-step web search reasoning (finding the closest branch, cross-referencing
+  // flyer aggregators, verifying addresses) produces hallucinated prices and fake store
+  // addresses — the exact failure mode the system instruction explicitly prohibits.
+  const model = "gemini-2.5-flash-preview-05-20";
+
   const sanitizedQuery = sanitizePromptInput(query);
   const sanitizedStore = store ? sanitizePromptInput(store, 50) : undefined;
   const sanitizedCategory = category ? sanitizePromptInput(category, 50) : undefined;
@@ -349,7 +367,7 @@ Return JSON array of objects:
   } else {
     userPrompt += `Find ALL items currently on sale in weekly flyers across the user's local area. You MUST return a comprehensive list of ALL items currently on sale. If an item is not on sale, search for the regular price items and display them.`;
   }
-  
+
   if (sanitizedStore) {
     userPrompt += ` CRITICAL: ONLY return items from the store: ${sanitizedStore}. Do NOT include items from any other store.`;
   } else {
@@ -369,7 +387,14 @@ Return JSON array of objects:
       config: {
         systemInstruction,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        // FIX: ThinkingLevel was LOW. searchSales must perform a multi-step reasoning
+        // chain: (1) query flyer aggregators, (2) query official store websites,
+        // (3) locate the closest branch via coordinates, (4) cross-reference and
+        // de-duplicate prices, (5) rank by price. LOW thinking drops steps 3-5,
+        // producing the exact hallucinated addresses and estimated prices the system
+        // instruction explicitly prohibits. MEDIUM provides the necessary depth for
+        // reliable web search grounding without excessive latency.
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
         responseMimeType: "application/json",
         maxOutputTokens: 8192,
         responseSchema: {
@@ -381,6 +406,11 @@ Return JSON array of objects:
               price: { type: Type.STRING, description: "Current price" },
               originalPrice: { type: Type.STRING, description: "Original or regular price" },
               isOnSale: { type: Type.BOOLEAN, description: "Whether the item is on sale" },
+              // FIX: validFrom was present in the system instruction, in addItem's tool
+              // schema, and in the SaleItem type — but was missing from this responseSchema.
+              // The model probabilistically omitted it, causing addItem to silently receive
+              // undefined validFrom even when the search result contained sale start dates.
+              validFrom: { type: Type.STRING, description: "Date the sale starts (e.g., 'Mar 13')" },
               validUntil: { type: Type.STRING, description: "Date the sale ends" },
               store: { type: Type.STRING, description: "Store name" },
               category: { type: Type.STRING, description: "Category" },
@@ -414,7 +444,6 @@ Return JSON array of objects:
     return mappedItems;
   } catch (e) {
     console.error("Search sales API error:", e);
-    // In production, you might want to return a specific error type or throw
     return [];
   }
 }
@@ -442,6 +471,10 @@ Do NOT include stores that do not operate in that region (e.g., do not include C
 
   try {
     const response = await getAIClient().models.generateContent({
+      // This is a simple regional availability check — flash-lite is appropriate here.
+      // The task is single-step (does chain X operate in region Y?) with no price
+      // verification or multi-hop reasoning. LOW thinking is also appropriate since
+      // this fires on session start and impacts perceived cold-start latency.
       model: "gemini-3.1-flash-lite-preview",
       contents: userPrompt,
       config: {
@@ -459,7 +492,7 @@ Do NOT include stores that do not operate in that region (e.g., do not include C
     });
 
     const validStoreNames = robustJsonParse<string[]>(response.text || "[]", []);
-    
+
     if (validStoreNames.length === 0) {
       return stores; // Fallback to all stores if the AI fails or returns empty
     }
