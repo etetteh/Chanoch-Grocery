@@ -111,6 +111,8 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const barRefs = useRef<(HTMLDivElement | null)[]>([]);
   const audioQueue = useRef<string[]>([]);
   const isPlaying = useRef(false);
   const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -402,7 +404,14 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
       const audioContext = new AudioContext({ sampleRate: 16000 });
       audioContextRef.current = audioContext;
       
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      analyserRef.current = analyser;
+      
       const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser); // Connect mic to analyser
+      
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
       processorRef.current = processor;
 
@@ -455,6 +464,9 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
     const source = audioContextRef.current.createBufferSource();
     source.buffer = buffer;
     source.connect(audioContextRef.current.destination);
+    if (analyserRef.current) {
+      source.connect(analyserRef.current);
+    }
     source.onended = () => {
       currentAudioSourceRef.current = null;
       playNextInQueue();
@@ -462,6 +474,44 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
     currentAudioSourceRef.current = source;
     source.start();
   };
+
+  useEffect(() => {
+    let animationFrameId: number;
+    
+    const updateWaveform = () => {
+      if (analyserRef.current && isConnected) {
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(dataArray);
+        
+        // We have 7 bars. Let's sample 7 different frequency bands.
+        const step = Math.floor(dataArray.length / 7);
+        for (let i = 0; i < 7; i++) {
+          let sum = 0;
+          for (let j = 0; j < step; j++) {
+            sum += dataArray[i * step + j];
+          }
+          const average = sum / step;
+          const normalized = average / 255; // 0 to 1
+          
+          if (barRefs.current[i]) {
+            const maxHeights = [24, 48, 72, 96, 72, 48, 24];
+            const minHeights = [8, 16, 24, 32, 24, 16, 8];
+            const targetHeight = minHeights[i] + (maxHeights[i] - minHeights[i]) * normalized * 2.0;
+            barRefs.current[i]!.style.height = `${Math.min(maxHeights[i] * 1.5, targetHeight)}px`;
+          }
+        }
+      }
+      animationFrameId = requestAnimationFrame(updateWaveform);
+    };
+    
+    if (isConnected) {
+      updateWaveform();
+    }
+    
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isConnected]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -1019,38 +1069,20 @@ export default function LiveAssistant({ onClose, onAddItem, onRemoveItem, onUpda
                       opacity: [0.4, 0.8, 0.4]
                     }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute w-32 h-32 bg-gradient-to-tr from-brand-500/40 to-blue-500/40 blur-2xl rounded-full"
+                    className="absolute w-32 h-32 bg-gradient-to-tr from-blue-500/20 to-cyan-500/20 blur-2xl rounded-full"
                   />
                   
-                  {/* Inner Orb */}
-                  <motion.div
-                    animate={{ 
-                      scale: [1, 1.05, 1],
-                    }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    className="relative w-20 h-20 rounded-full bg-gradient-to-tr from-brand-400 to-blue-500 shadow-[0_0_40px_rgba(34,197,94,0.6)] flex items-center justify-center border border-white/20 overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-white/20 mix-blend-overlay rounded-full animate-[spin_4s_linear_infinite]" />
-                    
-                    {/* Audio Waveform inside the orb */}
-                    <div className="flex gap-1 items-center justify-center z-10">
-                      {[0, 1, 2, 3, 4].map((i) => (
-                        <motion.div
-                          key={i}
-                          animate={{ 
-                            height: [8, 24, 12, 32, 16][i],
-                          }}
-                          transition={{ 
-                            repeat: Infinity, 
-                            duration: 0.5 + i * 0.1,
-                            repeatType: "reverse",
-                            ease: "easeInOut"
-                          }}
-                          className="w-1 bg-white rounded-full"
-                        />
-                      ))}
-                    </div>
-                  </motion.div>
+                  {/* Audio Waveform */}
+                  <div className="flex gap-1.5 items-center justify-center z-10 h-24">
+                    {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                      <div
+                        key={i}
+                        ref={(el) => { barRefs.current[i] = el; }}
+                        className="w-2 bg-blue-400 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.8)] transition-all duration-75"
+                        style={{ height: `${[8, 16, 24, 32, 24, 16, 8][i]}px` }}
+                      />
+                    ))}
+                  </div>
                 </div>
                 
               </div>

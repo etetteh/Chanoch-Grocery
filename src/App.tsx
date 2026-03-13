@@ -595,6 +595,7 @@ export default function App() {
                 { code: 'zh', label: '中文' },
                 { code: 'es', label: 'Español' },
                 { code: 'fr', label: 'Français' },
+                { code: 'fr-CA', label: 'Français (CA)' },
                 { code: 'pt', label: 'Português' },
                 { code: 'hi', label: 'हिन्दी' },
                 { code: 'ar', label: 'العربية' },

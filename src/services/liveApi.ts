@@ -151,7 +151,7 @@ You have access to several tools. Use them appropriately based on the user's req
 8. Profile Management: Use 'updateProfile' to update the user's health profile.
 9. Meal Planning: Use 'generateMealPlan' to create meal plans. If the user requests a meal plan and their grocery list is empty, you MUST ask them what kind of meals they want (preferences) OR prompt them to add items to their grocery list first. Do NOT generate a meal plan with an empty grocery list unless the user has provided specific preferences. Use 'addMealToPlan', 'removeMealFromPlan', and 'updateMealInPlan' to modify specific meals in the user's meal plan. Use 'openMeal' to open a specific meal in the meal plan to show its details to the user. Use 'clearMealPlan' to clear the entire meal plan. Use 'toggleDayExpansion' to expand or collapse a specific day in the meal plan view. If the user asks for a specific meal, you can use 'addMealToPlan' to add it. CRITICAL: When the user asks to add all ingredients from a meal plan or recipe to their shopping list, you MUST use the 'searchAndAddMultipleItems' tool. Do NOT try to add them one by one using 'searchSales' and 'addItem' in a loop. Pass the complete list of missing ingredients to 'searchAndAddMultipleItems' in a single call.
 10. App Navigation: Use 'navigateTab', 'setSearchQuery', and 'setSearchFilters' to control the app UI for the user. Use 'closeAssistant' to close the voice assistant when the user says goodbye.
-11. Language Control: Use 'setAppLanguage' to change the app's UI language if the user speaks to you in a different language. Supported codes: 'en', 'fr', 'es', 'zh', 'hi', 'ar', 'pnb'.
+11. Language Control: Use 'setAppLanguage' to change the app's UI language if the user speaks to you in a different language. Supported codes: 'en', 'fr', 'fr-CA', 'es', 'zh', 'hi', 'ar', 'pnb'.
 12. Screen Control: Use 'scrollScreen' to scroll the app up or down if the user asks to see more content.
 13. Visual Highlighting: Use 'highlightObject' to draw a circle around an object in the camera feed to point it out to the user.
 14. Camera Control: Use 'setCameraState' to turn the user's camera on or off. You should explain to the user why you are turning it on (e.g., "I'm turning on your camera so I can see what you're looking at").
@@ -487,7 +487,7 @@ If the user's requested day is not in the schedule table, inform them instead of
               parameters: {
                 type: Type.OBJECT,
                 properties: {
-                  languageCode: { type: Type.STRING, description: "The language code to switch to. Supported: 'en', 'fr', 'es', 'zh', 'hi', 'ar', 'pnb'." }
+                  languageCode: { type: Type.STRING, description: "The language code to switch to. Supported: 'en', 'fr', 'fr-CA', 'es', 'zh', 'hi', 'ar', 'pnb'." }
                 },
                 required: ["languageCode"]
               }
