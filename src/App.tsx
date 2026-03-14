@@ -717,7 +717,7 @@ export default function App() {
                         <motion.div animate={isLocating ? { rotate: 360 } : {}} transition={isLocating ? { repeat: Infinity, duration: 1, ease: "linear" } : {}}>
                           <RefreshCw size={12} />
                         </motion.div>
-                        Refresh
+                        {t('refresh_location')}
                       </motion.button>
                       <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
                       <button
@@ -1188,7 +1188,7 @@ export default function App() {
                       onClick={handleShare}
                       className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest hover:text-brand-600 hover:bg-transparent hover:scale-105 transition-all flex items-center gap-1.5"
                     >
-                      <motion.div whileHover={{ scale: 1.2, rotate: -15 }}><Share2 size={12} /></motion.div> Share
+                      <motion.div whileHover={{ scale: 1.2, rotate: -15 }}><Share2 size={12} /></motion.div> {t('share')}
                     </Button>
                     
                     <div className="relative">
@@ -1201,7 +1201,7 @@ export default function App() {
                           showClearConfirm ? "text-red-600 hover:text-red-700" : "text-slate-500 dark:text-slate-400 hover:text-red-500"
                         )}
                       >
-                        {showClearConfirm ? "Cancel" : "Clear All"}
+                        {showClearConfirm ? t('cancel') : t('clear_all')}
                       </Button>
                       
                       <AnimatePresence>

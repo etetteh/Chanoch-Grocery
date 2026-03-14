@@ -125,6 +125,14 @@ const resources = {
       footer_help: "Help",
       footer_privacy: "Privacy",
       footer_terms: "Terms",
+      refresh_location: "Refresh",
+      meal_budget_placeholder: "Optional budget (e.g. 150)",
+      meal_cravings_placeholder:
+        "Any specific cravings or dietary requests? (e.g., 'I want lots of pasta', 'Low carb dinners only')",
+      share: "Share",
+      clear_all: "Clear All",
+      cancel: "Cancel",
+      meal_cravings_short: "Any specific cravings?",
     },
   },
   zh: {
@@ -248,6 +256,14 @@ const resources = {
       footer_help: "帮助",
       footer_privacy: "隐私",
       footer_terms: "条款",
+      refresh_location: "刷新",
+      meal_budget_placeholder: "可选预算 (例如 150)",
+      meal_cravings_placeholder:
+        "有什么特别想吃的或饮食要求吗？(例如，“我想吃很多意大利面”，“只要低碳水晚餐”)",
+      share: "分享",
+      clear_all: "全部清除",
+      cancel: "取消",
+      meal_cravings_short: "有什么特别想吃的吗？",
     },
   },
   es: {
@@ -374,6 +390,14 @@ const resources = {
       footer_help: "Ayuda",
       footer_privacy: "Privacidad",
       footer_terms: "Términos",
+      refresh_location: "Actualizar",
+      meal_budget_placeholder: "Presupuesto opcional (ej. 150)",
+      meal_cravings_placeholder:
+        "¿Algún antojo específico o petición dietética? (ej., 'Quiero mucha pasta', 'Solo cenas bajas en carbohidratos')",
+      share: "Compartir",
+      clear_all: "Borrar todo",
+      cancel: "Cancelar",
+      meal_cravings_short: "¿Algún antojo específico?",
     },
   },
   fr: {
@@ -502,6 +526,14 @@ const resources = {
       footer_help: "Aide",
       footer_privacy: "Confidentialité",
       footer_terms: "Conditions",
+      refresh_location: "Actualiser",
+      meal_budget_placeholder: "Budget optionnel (ex. 150)",
+      meal_cravings_placeholder:
+        "Des envies spécifiques ou des demandes diététiques ? (ex. 'Je veux beaucoup de pâtes', 'Uniquement des dîners faibles en glucides')",
+      share: "Partager",
+      clear_all: "Tout effacer",
+      cancel: "Annuler",
+      meal_cravings_short: "Des envies spécifiques ?",
     },
   },
   "fr-CA": {
@@ -630,6 +662,14 @@ const resources = {
       footer_help: "Aide",
       footer_privacy: "Confidentialité",
       footer_terms: "Conditions",
+      refresh_location: "Actualiser",
+      meal_budget_placeholder: "Budget optionnel (ex. 150)",
+      meal_cravings_placeholder:
+        "Des envies spécifiques ou des demandes diététiques ? (ex. 'Je veux beaucoup de pâtes', 'Uniquement des soupers faibles en glucides')",
+      share: "Partager",
+      clear_all: "Tout effacer",
+      cancel: "Annuler",
+      meal_cravings_short: "Des envies spécifiques ?",
     },
   },
   pt: {
@@ -756,6 +796,14 @@ const resources = {
       footer_help: "Ajuda",
       footer_privacy: "Privacidade",
       footer_terms: "Termos",
+      refresh_location: "Atualizar",
+      meal_budget_placeholder: "Orçamento opcional (ex. 150)",
+      meal_cravings_placeholder:
+        "Algum desejo específico ou pedido dietético? (ex., 'Quero muita massa', 'Apenas jantares com pouco carboidrato')",
+      share: "Compartilhar",
+      clear_all: "Limpar tudo",
+      cancel: "Cancelar",
+      meal_cravings_short: "Algum desejo específico?",
     },
   },
   hi: {
@@ -882,6 +930,14 @@ const resources = {
       footer_help: "सहायता",
       footer_privacy: "गोपनीयता",
       footer_terms: "शर्तें",
+      refresh_location: "रीफ्रेश करें",
+      meal_budget_placeholder: "वैकल्पिक बजट (उदा. 150)",
+      meal_cravings_placeholder:
+        "कोई विशेष लालसा या आहार संबंधी अनुरोध? (उदा., 'मुझे बहुत सारा पास्ता चाहिए', 'केवल कम कार्ब वाले रात्रिभोज')",
+      share: "साझा करें",
+      clear_all: "सभी साफ़ करें",
+      cancel: "रद्द करें",
+      meal_cravings_short: "कोई विशेष लालसा?",
     },
   },
   ar: {
@@ -1008,6 +1064,14 @@ const resources = {
       footer_help: "مساعدة",
       footer_privacy: "الخصوصية",
       footer_terms: "الشروط",
+      refresh_location: "تحديث",
+      meal_budget_placeholder: "ميزانية اختيارية (مثل 150)",
+      meal_cravings_placeholder:
+        "أي رغبات معينة أو طلبات غذائية؟ (مثل، 'أريد الكثير من المعكرونة'، 'عشاء قليل الكربوهيدرات فقط')",
+      share: "مشاركة",
+      clear_all: "مسح الكل",
+      cancel: "إلغاء",
+      meal_cravings_short: "أي رغبات معينة؟",
     },
   },
   pnb: {
@@ -1133,6 +1197,14 @@ const resources = {
       footer_help: "مدد",
       footer_privacy: "پرائیویسی",
       footer_terms: "شرائط",
+      refresh_location: "تازہ کرو",
+      meal_budget_placeholder: "اختیاری بجٹ (جیویں 150)",
+      meal_cravings_placeholder:
+        "کوئی خاص خواہش یا خوراک دی فرمائش؟ (جیویں، 'مینوں بہت سارا پاستا چاہیدا اے'، 'صرف گھٹ کارب والے رات دے کھانے')",
+      share: "شیئر کرو",
+      clear_all: "سب صاف کرو",
+      cancel: "منسوخ کرو",
+      meal_cravings_short: "کوئی خاص خواہش؟",
     },
   },
 };

@@ -200,7 +200,7 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
               type="text"
               value={preferences}
               onChange={(e) => setPreferences(e.target.value)}
-              placeholder="Any specific cravings?"
+              placeholder={t('meal_cravings_short')}
               disabled={isGenerating}
               className="w-48 sm:w-64 h-11 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-emerald-500"
             />
@@ -253,13 +253,13 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
               step="0.01"
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
-              placeholder="Optional budget (e.g. 150)"
+              placeholder={t('meal_budget_placeholder')}
               className="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-emerald-500"
             />
             <Textarea
               value={preferences}
               onChange={(e) => setPreferences(e.target.value)}
-              placeholder="Any specific cravings or dietary requests? (e.g., 'I want lots of pasta', 'Low carb dinners only')"
+              placeholder={t('meal_cravings_placeholder')}
               className="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-emerald-500 resize-none h-24"
             />
           </div>
