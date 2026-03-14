@@ -183,7 +183,7 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
     // Meal plan generation involves multi-step cost estimation, ingredient substitution
     // reasoning, and health profile cross-referencing — tasks where flash-lite's reduced
     // thinking capacity produces incoherent macro calculations and ignores budget constraints.
-    const model = "gemini-2.5-flash-preview-05-20";
+    const model = "gemini-3.1-flash-lite-preview";
 
     const profileContext = `
       Diet Types: ${profile.dietTypes?.join(', ') || 'None'}
@@ -321,7 +321,7 @@ export async function searchSales(query: string, store?: string, category?: stri
   // for multi-step web search reasoning (finding the closest branch, cross-referencing
   // flyer aggregators, verifying addresses) produces hallucinated prices and fake store
   // addresses — the exact failure mode the system instruction explicitly prohibits.
-  const model = "gemini-2.5-flash-preview-05-20";
+  const model = "gemini-3.1-flash-lite-preview";
 
   const sanitizedQuery = sanitizePromptInput(query);
   const sanitizedStore = store ? sanitizePromptInput(store, 50) : undefined;
