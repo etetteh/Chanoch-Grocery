@@ -104,7 +104,7 @@ export default function HealthProfileView({ profile, onSave }: Props) {
               placeholder={t('profile_disliked_placeholder')}
               autoCorrect="on"
               spellCheck="true"
-              className="w-full bg-white dark:bg-gray-700 border-slate-300 dark:border-gray-600 rounded-xl focus-visible:ring-emerald-500"
+              className="w-full bg-white dark:bg-gray-700 border-slate-300 dark:border-gray-600 rounded-full focus-visible:ring-emerald-500"
             />
           </div>
         </div>
