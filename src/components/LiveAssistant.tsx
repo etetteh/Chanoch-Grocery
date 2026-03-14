@@ -614,6 +614,18 @@ export default function LiveAssistant({
               stopVideo();
             }
           },
+          onSetScreenShareState: (enabled) => {
+            if (enabled) {
+              startScreenShare();
+            } else {
+              stopVideo();
+            }
+          },
+          onSetCameraFacingMode: (mode) => {
+            if (facingMode !== mode) {
+              toggleCamera();
+            }
+          },
           onClose: () => {
             if (isMountedRef.current) {
               setIsConnected(false);
@@ -1072,7 +1084,7 @@ export default function LiveAssistant({
       )}
     >
       {/* Video Background (Astra Immersive View) */}
-      {isVideoEnabled && (
+      {(isVideoEnabled || isScreenSharing) && (
         <>
           <video
             ref={videoRef}
@@ -1081,23 +1093,27 @@ export default function LiveAssistant({
             muted
             className={`absolute inset-0 w-full h-full object-cover z-0 ${facingMode === "user" ? "scale-x-[-1]" : ""}`}
           />
-          {/* Viewfinder Overlay */}
-          <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center p-8">
-            <div className="w-full h-full max-w-sm max-h-[60vh] border-2 border-white/20 rounded-[2rem] relative">
-              {/* Corner Accents */}
-              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-brand-500 rounded-tl-[2rem]" />
-              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-brand-500 rounded-tr-[2rem]" />
-              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-brand-500 rounded-bl-[2rem]" />
-              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-brand-500 rounded-br-[2rem]" />
+          {isVideoEnabled && (
+            <>
+              {/* Viewfinder Overlay */}
+              <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center p-8">
+                <div className="w-full h-full max-w-sm max-h-[60vh] border-2 border-white/20 rounded-[2rem] relative">
+                  {/* Corner Accents */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-brand-500 rounded-tl-[2rem]" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-brand-500 rounded-tr-[2rem]" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-brand-500 rounded-bl-[2rem]" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-brand-500 rounded-br-[2rem]" />
 
-              {/* Scanning Line */}
-              <motion.div
-                animate={{ y: ["0%", "100%", "0%"] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-50 shadow-[0_0_15px_rgba(34,197,94,0.8)]"
-              />
-            </div>
-          </div>
+                  {/* Scanning Line */}
+                  <motion.div
+                    animate={{ y: ["0%", "100%", "0%"] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                    className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-50 shadow-[0_0_15px_rgba(34,197,94,0.8)]"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Highlights Overlay */}
           <div className="absolute inset-0 pointer-events-none z-20">

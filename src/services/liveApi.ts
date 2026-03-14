@@ -54,6 +54,8 @@ export async function connectToLive(callbacks: {
   onScrollScreen?: (direction: 'up' | 'down') => void;
   onHighlightObject?: (normalizedX: number, normalizedY: number, label?: string) => void;
   onSetCameraState?: (enabled: boolean) => void;
+  onSetScreenShareState?: (enabled: boolean) => void;
+  onSetCameraFacingMode?: (mode: 'user' | 'environment') => void;
   onClose?: () => void;
   onError?: (error: any) => void;
 }, userLocation: { lat: number; lng: number; accuracy?: number } | null, groceryList: any[] = [], healthProfile: any = null, language: string = 'en', currentMealPlan: any = null) {
@@ -526,6 +528,28 @@ If the user's requested day is not in the schedule table, inform them instead of
                 },
                 required: ["enabled"]
               }
+            },
+            {
+              name: "setScreenShareState",
+              description: "Turn screen sharing on or off.",
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  enabled: { type: Type.BOOLEAN, description: "True to turn screen sharing on, false to turn it off." }
+                },
+                required: ["enabled"]
+              }
+            },
+            {
+              name: "setCameraFacingMode",
+              description: "Switch between front ('user') and back ('environment') camera.",
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  mode: { type: Type.STRING, description: "The camera mode to switch to: 'user' or 'environment'." }
+                },
+                required: ["mode"]
+              }
             }
           ]
         }
@@ -864,6 +888,16 @@ ${JSON.stringify(deduped)}`;
               callbacks.onSetCameraState?.(enabled);
               callbacks.onTranscription(`${enabled ? 'Turning on' : 'Turning off'} camera...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Camera turned ${enabled ? 'on' : 'off'} successfully` } });
+            } else if (fc.name === "setScreenShareState") {
+              const { enabled } = fc.args as { enabled: boolean };
+              callbacks.onSetScreenShareState?.(enabled);
+              callbacks.onTranscription(`${enabled ? 'Starting' : 'Stopping'} screen share...`, false);
+              responses.push({ name: fc.name, id: fc.id, response: { result: `Screen share turned ${enabled ? 'on' : 'off'} successfully` } });
+            } else if (fc.name === "setCameraFacingMode") {
+              const { mode } = fc.args as { mode: 'user' | 'environment' };
+              callbacks.onSetCameraFacingMode?.(mode);
+              callbacks.onTranscription(`Switching to ${mode} camera...`, false);
+              responses.push({ name: fc.name, id: fc.id, response: { result: `Camera switched to ${mode} successfully` } });
             }
           }
           if (responses.length > 0) {
