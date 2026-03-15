@@ -5,7 +5,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const resources = {
   en: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "Live in your area",
       tab_search: "Search",
       tab_list: "My List",
@@ -66,12 +66,12 @@ const resources = {
       popular_pantry: "Pantry Staples",
       voice_assistant: "Voice Assistant",
       voice_ready: "Ready to help with your groceries",
-      voice_initializing: "Initializing Chanoch",
+      voice_initializing: "Initializing Chanoch Grocery",
       voice_neural_link: "Establishing Neural Link",
-      voice_live: "Chanoch Live",
+      voice_live: "Chanoch Grocery Live",
       voice_active_session: "Active Session",
       voice_user_input: "User Input",
-      voice_scout_response: "Chanoch Response",
+      voice_scout_response: "Chanoch Grocery Response",
       voice_listening_prompt: "I'm listening for your request...",
       voice_listening: "Listening...",
       voice_processing: "Processing...",
@@ -137,7 +137,7 @@ const resources = {
   },
   zh: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "多伦多实时信息",
       tab_search: "搜索",
       tab_list: "我的清单",
@@ -268,7 +268,7 @@ const resources = {
   },
   es: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "En vivo en tu área",
       tab_search: "Buscar",
       tab_list: "Mi Lista",
@@ -402,7 +402,7 @@ const resources = {
   },
   fr: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "En direct dans votre région",
       tab_search: "Recherche",
       tab_list: "Ma Liste",
@@ -538,7 +538,7 @@ const resources = {
   },
   "fr-CA": {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "En direct dans votre région",
       tab_search: "Recherche",
       tab_list: "Ma Liste",
@@ -674,7 +674,7 @@ const resources = {
   },
   pt: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "Ao vivo na sua área",
       tab_search: "Buscar",
       tab_list: "Minha Lista",
@@ -808,7 +808,7 @@ const resources = {
   },
   hi: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "टोरंटो में लाइव",
       tab_search: "खोजें",
       tab_list: "मेरी सूची",
@@ -942,7 +942,7 @@ const resources = {
   },
   ar: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "مباشر في تورونتو",
       tab_search: "بحث",
       tab_list: "قائمتي",
@@ -1076,7 +1076,7 @@ const resources = {
   },
   pnb: {
     translation: {
-      app_name: "Chanoch",
+      app_name: "Chanoch Grocery",
       app_subtitle: "ٹورنٹو وچ لائیو",
       tab_search: "لبھو",
       tab_list: "میری لسٹ",

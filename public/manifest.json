@@ -1,6 +1,6 @@
 {
-  "name": "Chanoch",
-  "short_name": "Chanoch",
+  "name": "Chanoch Grocery",
+  "short_name": "Chanoch Grocery",
   "description": "Find grocery sales and build your shopping list.",
   "start_url": "/",
   "display": "standalone",

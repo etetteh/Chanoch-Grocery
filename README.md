@@ -1,4 +1,4 @@
-# Chanoch - Gemini Live Agent Challenge Submission
+# Chanoch Grocery - Gemini Live Agent Challenge Submission
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -8,7 +8,7 @@
 ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
 
 ## 🌟 What it does (Elevator Pitch)
-**Chanoch** is a next-generation multimodal AI grocery assistant that acts as your personal shopper. By combining real-time voice, vision, and location data, it helps you find the best local deals, manage your shopping lists, and verify health preferences—all through a seamless, hands-free conversational interface. 
+**Chanoch Grocery** is a next-generation multimodal AI grocery assistant that acts as your personal shopper. By combining real-time voice, vision, and location data, it helps you find the best local deals, manage your shopping lists, and verify health preferences—all through a seamless, hands-free conversational interface. 
 
 Whether you're asking "Where's the cheapest milk near me?" or pointing your camera at a flyer and asking "Are there any deals on these items?", the agent seamlessly integrates real-time voice, vision, and location data to provide instant, actionable results.
 
@@ -48,8 +48,6 @@ The agent operates on a robust, multi-layered architecture:
 ## 🏗️ Architecture Diagram
 
 ![Architecture Diagram](/architecture.png)
-
-*Note: Please ensure the image is uploaded to the `public` folder as `architecture.png`.*
 
 ## 🆕 Recent Updates & Fixes
 ### Recent Enhancements

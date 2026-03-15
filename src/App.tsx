@@ -462,12 +462,12 @@ export default function App() {
       .map(i => `${i.completed ? '[x]' : '[ ]'} ${i.quantity || 1}x ${i.name} (${i.price || 'N/A'}) @ ${i.store || 'Unknown'}`)
       .join('\n');
     
-    const fullText = `Chanoch Shopping List:\n\n${listText}\n\nEstimated Total: $${totalEstimated.toFixed(2)}`;
+    const fullText = `Chanoch Grocery Shopping List:\n\n${listText}\n\nEstimated Total: $${totalEstimated.toFixed(2)}`;
     
     try {
       if (navigator.share && window.isSecureContext) {
         await navigator.share({
-          title: 'Chanoch Shopping List',
+          title: 'Chanoch Grocery Shopping List',
           text: fullText,
         });
       } else if (navigator.clipboard && window.isSecureContext) {
@@ -1775,7 +1775,7 @@ export default function App() {
             <button className="hover:text-brand-600 transition-colors">{t('footer_terms') || 'Terms'}</button>
           </div>
           <p className="text-[10px] text-slate-600 dark:text-slate-500 font-medium">
-            &copy; 2026 Chanoch. AI-powered shopping assistant.
+            &copy; 2026 Chanoch Grocery. AI-powered shopping assistant.
           </p>
         </div>
       </footer>
@@ -1808,10 +1808,10 @@ export default function App() {
                 <div className="w-16 h-16 bg-brand-500/10 rounded-3xl flex items-center justify-center text-brand-600">
                   <motion.div whileHover={{ scale: 1.2, rotate: -10 }}><Tag size={32} /></motion.div>
                 </div>
-                <h3 className="text-2xl font-display font-bold text-slate-800 dark:text-white tracking-tight">About Chanoch</h3>
+                <h3 className="text-2xl font-display font-bold text-slate-800 dark:text-white tracking-tight">About Chanoch Grocery</h3>
                 <div className="space-y-3 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                   <p>
-                    Chanoch uses AI to help you find the best grocery deals across the city.
+                    Chanoch Grocery uses AI to help you find the best grocery deals across the city.
                   </p>
                   <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl text-amber-700 dark:text-amber-400 text-xs italic">
                     Note: The AI searches the web for actual current flyer prices. However, store prices may change or vary by location. Always verify deals at the store.

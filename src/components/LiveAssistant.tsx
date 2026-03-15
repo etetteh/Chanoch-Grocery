@@ -297,7 +297,7 @@ export default function LiveAssistant({
             role: "user",
             parts: [
               {
-                text: "Hello Chanoch! Please introduce yourself as my personal grocery assistant.",
+                text: "Hello Chanoch Grocery! Please introduce yourself as my personal grocery assistant.",
               },
             ],
           },
@@ -1296,7 +1296,7 @@ export default function LiveAssistant({
                     {t("voice_ready")}
                   </h2>
                   <p className="text-white/60 text-sm max-w-[280px] mx-auto">
-                    Chanoch is ready to help you find the best deals in your
+                    Chanoch Grocery is ready to help you find the best deals in your
                     area. Click below to start the live session.
                   </p>
                   <Button
@@ -1306,7 +1306,7 @@ export default function LiveAssistant({
                     }}
                     className="px-8 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-xl shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 mx-auto"
                   >
-                    Initialize Chanoch
+                    Initialize Chanoch Grocery
                   </Button>
                 </div>
               </div>
@@ -1405,7 +1405,7 @@ export default function LiveAssistant({
                               : "text-blue-400",
                           )}
                         >
-                          {transcription.isUser ? "You" : "Chanoch"}
+                          {transcription.isUser ? "You" : "Chanoch Grocery"}
                         </p>
                       </div>
                     )}
