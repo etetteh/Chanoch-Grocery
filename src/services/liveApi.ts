@@ -38,6 +38,10 @@ export async function connectToLive(callbacks: {
   onSearchAndAddMultipleItems?: (items: string[]) => Promise<string>;
   onUpdateProfile?: (dietTypes?: string[], allergies?: string[], goals?: string[], dislikedIngredients?: string[]) => void;
   onGenerateMealPlan?: (days: number, budget?: number, people?: number, preferences?: string) => Promise<string>;
+  // Generates exactly one authentic recipe for a named dish + slot.
+  // LiveAssistant.tsx must wire this to generateSingleMeal() from gemini.ts,
+  // serialize the Meal result as JSON.stringify(meal), and return the string.
+  onGenerateSingleMeal?: (mealName: string, mealType: string, dayLabel: string, additionalNotes?: string) => Promise<string>;
   onAddMealToPlan?: (dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', meal: any) => Promise<string> | string;
   onRemoveMealFromPlan?: (dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack') => Promise<string> | string;
   onUpdateMealInPlan?: (dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', mealUpdates: any) => Promise<string> | string;
@@ -64,15 +68,8 @@ export async function connectToLive(callbacks: {
 
   const ai = new GoogleGenAI({ apiKey });
 
-  // Build the day schedule once at connection time so the system prompt and tool
-  // descriptions get a concrete, session-anchored lookup table. 14 days covers any
-  // realistic meal plan window the user might request.
   const { schedule: daySchedule, lookup: dayLookup } = buildDaySchedule(14);
 
-  // FIX: resolvedSession is set after the race resolves so all async tool callbacks
-  // use a direct reference instead of chaining .then() on the unresolved sessionPromise.
-  // This eliminates the latent race condition where callbacks fired before the session
-  // fully resolved could drop messages silently.
   let resolvedSession: any = null;
 
   const timeContext = `The current local time is ${new Date().toLocaleString()}. Use this to determine if sales are currently active.`;
@@ -88,8 +85,6 @@ export async function connectToLive(callbacks: {
   const languageContext = `The user's preferred language is ${language}. You MUST respond and interact exclusively in this language. If the user speaks in another language, acknowledge it but stick to ${language} if that's what they've selected in the UI.`;
 
   const sessionPromise = ai.live.connect({
-    // FIX: upgraded from 09-2025 to 12-2025 — this version has measurably better
-    // tool-calling reliability, structured output adherence, and multimodal reasoning.
     model: "gemini-2.5-flash-native-audio-preview-12-2025",
     config: {
       responseModalities: [Modality.AUDIO],
@@ -151,13 +146,29 @@ You have access to several tools. Use them appropriately based on the user's req
 5. Cross-Modal Reasoning: Connect what you see with the user's health profile, location, and shopping list. For example, if you see a recipe book, cross-reference the ingredients with what you've seen in their fridge and what's on their list, and tell them what they are missing.
 6. Ultra-Low Latency & Interruptibility: You must respond instantly. If the user interrupts you while you are speaking, stop immediately, discard your current thought, and address their new input.
 7. Profile Management: Use 'updateProfile' to update the user's health profile.
-8. Meal Planning: Use 'generateMealPlan' to create meal plans. If the user requests a meal plan and their grocery list is empty, you MUST ask them what kind of meals they want (preferences) OR prompt them to add items to their grocery list first. Do NOT generate a meal plan with an empty grocery list unless the user has provided specific preferences. Use 'addMealToPlan', 'removeMealFromPlan', and 'updateMealInPlan' to modify specific meals in the user's meal plan. Use 'openMeal' to open a specific meal in the meal plan to show its details to the user. Use 'clearMealPlan' to clear the entire meal plan. Use 'toggleDayExpansion' to expand or collapse a specific day in the meal plan view. If the user asks for a specific meal, you can use 'addMealToPlan' to add it. CRITICAL: When the user asks to add all ingredients from a meal plan or recipe to their shopping list, you MUST use the 'searchAndAddMultipleItems' tool. Do NOT try to add them one by one using 'searchSales' and 'addItem' in a loop. Pass the complete list of missing ingredients to 'searchAndAddMultipleItems' in a single call.
+8. Meal Planning — READ THIS ROUTING TABLE BEFORE CALLING ANY MEAL TOOL:
+
+   | User intent | Correct tool |
+   |---|---|
+   | Named dish + specific day + specific slot (e.g. "add Ghanaian fufu for Tuesday lunch") | 'generateSingleMeal' then 'addMealToPlan' |
+   | "Suggest something for Tuesday lunch" (no dish named) | 'generateSingleMeal' then 'addMealToPlan' |
+   | "Generate a full week meal plan" / "Create a meal plan for N days" | 'generateMealPlan' |
+   | "Add all ingredients from the plan to my list" | 'searchAndAddMultipleItems' |
+
+   CRITICAL: If the user names a specific dish AND specifies a day and slot, you MUST call 'generateSingleMeal' — NEVER 'generateMealPlan'. Calling 'generateMealPlan' overwrites the entire existing plan with random dishes across all days, which is NOT what the user wants.
+
+   'generateSingleMeal': Generates one complete, authentic recipe for the exact dish the user named. After it resolves, immediately call 'addMealToPlan' with the result and the correct dayIndex from the DAY INDEX SCHEDULE table.
+
+   'generateMealPlan': ONLY call this for explicit full multi-day plan requests. This replaces the ENTIRE current plan. Never call it for single-slot or single-dish requests. If the grocery list is empty and no preferences are given, ask the user for preferences first.
+
+   Use 'addMealToPlan', 'removeMealFromPlan', and 'updateMealInPlan' to modify specific meals. Use 'openMeal' to open a specific meal's details. Use 'clearMealPlan' to clear the entire plan. Use 'toggleDayExpansion' to expand or collapse a day. CRITICAL: When the user asks to add all ingredients from a meal plan or recipe to their shopping list, you MUST use 'searchAndAddMultipleItems'. Do NOT add them one by one.
+
 9. App Navigation: Use 'navigateTab', 'setSearchQuery', and 'setSearchFilters' to control the app UI for the user. Use 'closeAssistant' to close the voice assistant when the user says goodbye.
 10. Language Control: Use 'setAppLanguage' to change the app's UI language if the user speaks to you in a different language. Supported codes: 'en', 'zh', 'es', 'fr', 'fr-CA', 'pt', 'hi', 'ar', 'pnb'.
 11. Screen Control: Use 'scrollScreen' to scroll the app up or down if the user asks to see more content.
 12. Visual Highlighting: Use 'highlightObject' to draw a circle around an object in the camera feed to point it out to the user.
-13. Camera Control: Use 'setCameraState' to turn the user's camera on or off. You should explain to the user why you are turning it on (e.g., "I'm turning on your camera so I can see what you're looking at").
-14. Screen Share: The user can share their screen with you using the "Share Screen" button. If they do, you will see their screen instead of their camera.
+13. Camera Control: Use 'setCameraState' to turn the user's camera on or off. You should explain to the user why you are turning it on. Use 'setCameraFacingMode' to switch between front and back camera.
+14. Screen Share: The user can share their screen with you using the "Share Screen" button. Use 'setScreenShareState' to turn screen sharing on or off. If active, you will see their screen instead of their camera.
 15. Scan Item: Use 'scanItem' to trigger the app's built-in barcode/product scanner when the user asks to scan a product on the scan page.
 16. Web Search: Use the 'googleSearch' tool to answer questions, find recipes, or look up information that requires real-time web access. CRITICAL: Only use this for grocery, food, recipe, or store-related queries. Do not use it for general web searches.
 </Capabilities and Tools>
@@ -248,10 +259,6 @@ When you first connect or start a conversation, you MUST always introduce yourse
               }
             },
             {
-              // FIX: description now includes explicit trigger conditions and a hard
-              // prohibition on using memory for prices. In long sessions the system prompt
-              // instructions decay in weight — tool descriptions remain in the schema and
-              // are re-read on every tool selection step, making them more reliable anchors.
               name: "searchSales",
               description: `Searches the live web for current grocery prices and deals near the user.
 CALL THIS TOOL FIRST before addItem for any user request that involves prices, deals, adding items, or finding the cheapest option for a product.
@@ -296,7 +303,10 @@ Use simplified product queries for faster results: prefer 'milk 2L' over 'cheape
             },
             {
               name: "generateMealPlan",
-              description: "Generate a meal plan based on the user's current grocery list, health profile, budget, and number of people.",
+              description: `Generates a COMPLETE NEW multi-day meal plan that replaces the entire current plan.
+ONLY call this for explicit full-plan requests like "generate a meal plan for the week" or "create a 5-day plan".
+NEVER call this when the user asks for a specific dish on a specific day and slot — use 'generateSingleMeal' for that.
+If the grocery list is empty and no preferences are given, ask the user for preferences first.`,
               parameters: {
                 type: Type.OBJECT,
                 properties: {
@@ -306,6 +316,40 @@ Use simplified product queries for faster results: prefer 'milk 2L' over 'cheape
                   preferences: { type: Type.STRING, description: "Optional specific preferences (e.g., 'high protein', 'low carb')" }
                 },
                 required: ["days"]
+              }
+            },
+            {
+              name: "generateSingleMeal",
+              description: `Generates ONE complete, authentic recipe for a specific named dish and places it in a single meal slot.
+
+USE THIS TOOL when:
+- The user names a specific dish for a specific day and slot (e.g. "Ghanaian fufu and peanut butter soup with chicken for Tuesday lunch")
+- The user wants an AI-suggested meal for one slot without regenerating the entire plan (e.g. "suggest something for Wednesday dinner")
+
+DO NOT use 'generateMealPlan' for these cases — it overwrites the entire plan with random dishes across all days.
+
+After this tool resolves, you MUST immediately call 'addMealToPlan' with the returned meal data and the correct dayIndex from the DAY INDEX SCHEDULE table.`,
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  mealName: {
+                    type: Type.STRING,
+                    description: "The exact dish name as stated by the user (e.g., 'Ghanaian fufu and peanut butter soup with chicken'). Do not paraphrase, generalize, or substitute."
+                  },
+                  mealType: {
+                    type: Type.STRING,
+                    description: "The meal slot type: 'breakfast', 'lunch', 'dinner', or 'snack'"
+                  },
+                  dayLabel: {
+                    type: Type.STRING,
+                    description: "The full day label from the DAY INDEX SCHEDULE (e.g., 'Tuesday, Mar 18'). Look it up from the table — do not infer or calculate."
+                  },
+                  additionalNotes: {
+                    type: Type.STRING,
+                    description: "Optional: any extra context from the user such as serving size, dietary restrictions for this meal, or cooking method preferences"
+                  }
+                },
+                required: ["mealName", "mealType", "dayLabel"]
               }
             },
             {
@@ -576,20 +620,12 @@ If the user's requested day is not in the schedule table, inform them instead of
         if (toolCall?.functionCalls) {
           const responses = [];
           for (const fc of toolCall.functionCalls) {
+
             if (fc.name === "addItem") {
               const { name, category, store, price, quantity, address, mapsUri, distance, originalPrice, validFrom, validUntil, unit } = fc.args as {
-                name: string;
-                category: string;
-                store?: string;
-                price?: string;
-                originalPrice?: string;
-                validFrom?: string;
-                validUntil?: string;
-                quantity?: number;
-                address?: string;
-                mapsUri?: string;
-                distance?: string;
-                unit?: string;
+                name: string; category: string; store?: string; price?: string; originalPrice?: string;
+                validFrom?: string; validUntil?: string; quantity?: number; address?: string;
+                mapsUri?: string; distance?: string; unit?: string;
               };
               callbacks.onAddItem?.(name, category, store, price, quantity, address, mapsUri, distance, originalPrice, validFrom, validUntil, unit);
               responses.push({ name: fc.name, id: fc.id, response: { result: "Item added successfully" } });
@@ -614,70 +650,40 @@ If the user's requested day is not in the schedule table, inform them instead of
             } else if (fc.name === "searchSales") {
               const { query, store } = fc.args as { query: string; store?: string };
               callbacks.onTranscription(`Searching for deals on ${query}...`, false);
-
-              // FIX 1: The injected message is now pure data — no behavioral instructions.
-              // The original code injected "If you are autonomously adding ingredients for a meal
-              // plan, immediately call addItem..." which caused the model to bypass HITL because
-              // it treated that injected user-role message as an authorization to act without
-              // confirmation. Now the model reasons purely from its system prompt rules.
-              //
-              // FIX 2: Added .catch() — the original had no error handler, meaning a failed
-              // search would silently drop the promise and leave the model waiting indefinitely
-              // for a result that would never arrive, causing the session to appear frozen.
-              //
-              // FIX 3: Uses resolvedSession directly instead of sessionPromise.then(), which
-              // eliminates the forward-reference race condition from the original code.
               callbacks.onSearchSales?.(query, store)
                 .then(result => {
                   resolvedSession?.sendClientContent({
-                    turns: [{
-                      role: "user",
-                      parts: [{ text: `[SEARCH_RESULT for "${query}"]\n${result || "No results found."}\n[END_SEARCH_RESULT]` }]
-                    }],
+                    turns: [{ role: "user", parts: [{ text: `[SEARCH_RESULT for "${query}"]\n${result || "No results found."}\n[END_SEARCH_RESULT]` }] }],
                     turnComplete: true
                   });
                 })
                 .catch(err => {
                   console.error(`searchSales failed for query "${query}":`, err);
                   resolvedSession?.sendClientContent({
-                    turns: [{
-                      role: "user",
-                      parts: [{ text: `[SEARCH_RESULT for "${query}"]\nSearch failed due to an error: ${err?.message || 'Unknown error'}. Inform the user that the search could not be completed and ask if they would like to try again.\n[END_SEARCH_RESULT]` }]
-                    }],
+                    turns: [{ role: "user", parts: [{ text: `[SEARCH_RESULT for "${query}"]\nSearch failed: ${err?.message || 'Unknown error'}. Inform the user and ask if they would like to try again.\n[END_SEARCH_RESULT]` }] }],
                     turnComplete: true
                   });
                 });
-
               responses.push({ name: fc.name, id: fc.id, response: { result: "Search started. Inform the user you are looking for deals and will report back shortly." } });
 
             } else if (fc.name === "searchAndAddMultipleItems") {
               const { items } = fc.args as { items: string[] };
               const safeItems = items || [];
               callbacks.onTranscription(`Searching and adding ${safeItems.length} items...`, false);
-
-              // FIX: Same three fixes applied — pure data injection, .catch() added,
-              // resolvedSession used directly.
               callbacks.onSearchAndAddMultipleItems?.(safeItems)
                 .then(result => {
                   resolvedSession?.sendClientContent({
-                    turns: [{
-                      role: "user",
-                      parts: [{ text: `[BATCH_ADD_RESULT for ${safeItems.length} items]\n${result}\n[END_BATCH_ADD_RESULT]` }]
-                    }],
+                    turns: [{ role: "user", parts: [{ text: `[BATCH_ADD_RESULT for ${safeItems.length} items]\n${result}\n[END_BATCH_ADD_RESULT]` }] }],
                     turnComplete: true
                   });
                 })
                 .catch(err => {
                   console.error("searchAndAddMultipleItems failed:", err);
                   resolvedSession?.sendClientContent({
-                    turns: [{
-                      role: "user",
-                      parts: [{ text: `[BATCH_ADD_RESULT for ${safeItems.length} items]\nBatch add failed due to an error: ${err?.message || 'Unknown error'}. Inform the user and ask if they would like to try again.\n[END_BATCH_ADD_RESULT]` }]
-                    }],
+                    turns: [{ role: "user", parts: [{ text: `[BATCH_ADD_RESULT for ${safeItems.length} items]\nBatch add failed: ${err?.message || 'Unknown error'}. Inform the user and ask if they would like to try again.\n[END_BATCH_ADD_RESULT]` }] }],
                     turnComplete: true
                   });
                 });
-
               responses.push({ name: fc.name, id: fc.id, response: { result: "Batch search and add started. Inform the user you are working on it and will update them when complete." } });
 
             } else if (fc.name === "updateProfile") {
@@ -686,31 +692,45 @@ If the user's requested day is not in the schedule table, inform them instead of
               callbacks.onTranscription("Updating health profile...", false);
               responses.push({ name: fc.name, id: fc.id, response: { result: "Profile updated successfully" } });
 
-            } else if (fc.name === "generateMealPlan") {
-              const { days, budget, people, preferences } = fc.args as { days: number, budget?: number, people?: number, preferences?: string };
-              callbacks.onTranscription(`Generating a ${days}-day meal plan...`, false);
+            } else if (fc.name === "generateSingleMeal") {
+              // Fix for the fufu bug: the model now routes named-dish + specific-slot
+              // requests here instead of generateMealPlan, which overwrites all 7 days.
+              // This generates exactly one authentic recipe, then the model calls
+              // addMealToPlan with the result and the correct dayIndex from the schedule.
+              const { mealName, mealType, dayLabel, additionalNotes } = fc.args as {
+                mealName: string; mealType: string; dayLabel: string; additionalNotes?: string;
+              };
+              callbacks.onTranscription(`Generating recipe for ${mealName}...`, false);
+              callbacks.onGenerateSingleMeal?.(mealName, mealType, dayLabel, additionalNotes)
+                .then(result => {
+                  resolvedSession?.sendClientContent({
+                    turns: [{
+                      role: "user",
+                      parts: [{ text: `[MEAL_RESULT for "${mealName}" (${mealType} on ${dayLabel})]\n${result}\n[END_MEAL_RESULT]\n\nNow call 'addMealToPlan' with this meal data. Use the DAY INDEX SCHEDULE table to get the exact dayIndex for "${dayLabel}". The mealType is "${mealType}".` }]
+                    }],
+                    turnComplete: true
+                  });
+                })
+                .catch(err => {
+                  console.error(`generateSingleMeal failed for "${mealName}":`, err);
+                  resolvedSession?.sendClientContent({
+                    turns: [{ role: "user", parts: [{ text: `[MEAL_RESULT for "${mealName}"]\nMeal generation failed: ${err?.message || 'Unknown error'}. Apologize to the user and ask if they would like to try again or choose a different dish.\n[END_MEAL_RESULT]` }] }],
+                    turnComplete: true
+                  });
+                });
+              responses.push({ name: fc.name, id: fc.id, response: { result: `Generating ${mealName} recipe. Please let the user know this will take a moment.` } });
 
-              // FIX (Bug 1 — batch ingredient adding fails):
-              // The original code injected the raw meal plan JSON string directly into the
-              // session. The agent then had to parse a large nested JSON blob from plain text
-              // to enumerate ingredients, which it consistently failed for plans >3 days —
-              // producing partial lists, skipping snack ingredients, or hallucinating items.
-              //
-              // Fix: parse the meal plan result server-side here, deduplicate all ingredients
-              // across every day/slot into a clean numbered list, and pass the agent the exact
-              // JSON array it should forward to searchAndAddMultipleItems. The agent no longer
-              // does any parsing — it just reads a pre-prepared list.
+            } else if (fc.name === "generateMealPlan") {
+              const { days, budget, people, preferences } = fc.args as { days: number; budget?: number; people?: number; preferences?: string };
+              callbacks.onTranscription(`Generating a ${days}-day meal plan...`, false);
               callbacks.onGenerateMealPlan?.(days, budget, people, preferences)
                 .then(result => {
                   let ingredientBlock = '';
                   try {
-                    // Attempt to parse the meal plan from the result string.
-                    // onGenerateMealPlan returns the JSON string of the MealPlan object.
                     const parsed = JSON.parse(result);
                     if (parsed?.days && Array.isArray(parsed.days)) {
                       const seen = new Set<string>();
                       const deduped: string[] = [];
-
                       for (const day of parsed.days) {
                         for (const slotType of ['breakfast', 'lunch', 'dinner', 'snack'] as const) {
                           const meal = day[slotType];
@@ -725,67 +745,47 @@ If the user's requested day is not in the schedule table, inform them instead of
                           }
                         }
                       }
-
                       if (deduped.length > 0) {
-                        // Provide the agent both a human-readable list AND the exact JSON
-                        // array to pass into searchAndAddMultipleItems, eliminating any
-                        // re-parsing or reformatting the agent might otherwise attempt.
-                        ingredientBlock = `
-
-INGREDIENT SUMMARY — ${deduped.length} unique ingredients across all ${parsed.days.length} days:
-${deduped.map((ing, i) => `${i + 1}. ${ing}`).join('\n')}
-
-If the user wants to add all ingredients to their shopping list, call 'searchAndAddMultipleItems' with this exact items array (copy verbatim, do not modify):
-${JSON.stringify(deduped)}`;
+                        ingredientBlock = `\n\nINGREDIENT SUMMARY — ${deduped.length} unique ingredients across all ${parsed.days.length} days:\n${deduped.map((ing, i) => `${i + 1}. ${ing}`).join('\n')}\n\nIf the user wants to add all ingredients to their shopping list, call 'searchAndAddMultipleItems' with this exact items array (copy verbatim, do not modify):\n${JSON.stringify(deduped)}`;
                       }
                     }
                   } catch {
-                    // Parsing failed — the agent will work from the raw result without
-                    // the ingredient summary. Batch adding may be less reliable in this case.
                     console.warn('generateMealPlan: could not parse result for ingredient extraction');
                   }
-
                   resolvedSession?.sendClientContent({
-                    turns: [{
-                      role: "user",
-                      parts: [{ text: `[MEAL_PLAN_RESULT]\n${result}${ingredientBlock}\n[END_MEAL_PLAN_RESULT]` }]
-                    }],
+                    turns: [{ role: "user", parts: [{ text: `[MEAL_PLAN_RESULT]\n${result}${ingredientBlock}\n[END_MEAL_PLAN_RESULT]` }] }],
                     turnComplete: true
                   });
                 })
                 .catch(err => {
                   console.error("generateMealPlan failed:", err);
                   resolvedSession?.sendClientContent({
-                    turns: [{
-                      role: "user",
-                      parts: [{ text: `[MEAL_PLAN_RESULT]\nMeal plan generation failed due to an error: ${err?.message || 'Unknown error'}. Apologize to the user and suggest they try again.\n[END_MEAL_PLAN_RESULT]` }]
-                    }],
+                    turns: [{ role: "user", parts: [{ text: `[MEAL_PLAN_RESULT]\nMeal plan generation failed: ${err?.message || 'Unknown error'}. Apologize to the user and suggest they try again.\n[END_MEAL_PLAN_RESULT]` }] }],
                     turnComplete: true
                   });
                 });
-
               responses.push({ name: fc.name, id: fc.id, response: { result: "Meal plan generation started. Inform the user you are working on it and will let them know when it's ready." } });
 
             } else if (fc.name === "addMealToPlan") {
-              const { dayIndex, type, meal } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', meal: any };
+              const { dayIndex, type, meal } = fc.args as { dayIndex: number; type: 'breakfast' | 'lunch' | 'dinner' | 'snack'; meal: any };
               callbacks.onTranscription(`Adding ${meal.name} to meal plan...`, false);
               const result = await callbacks.onAddMealToPlan?.(dayIndex, type, meal);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to add meal to plan" } });
 
             } else if (fc.name === "removeMealFromPlan") {
-              const { dayIndex, type } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack' };
+              const { dayIndex, type } = fc.args as { dayIndex: number; type: 'breakfast' | 'lunch' | 'dinner' | 'snack' };
               callbacks.onTranscription(`Removing meal from plan...`, false);
               const result = await callbacks.onRemoveMealFromPlan?.(dayIndex, type);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to remove meal from plan" } });
 
             } else if (fc.name === "updateMealInPlan") {
-              const { dayIndex, type, mealUpdates } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', mealUpdates: any };
+              const { dayIndex, type, mealUpdates } = fc.args as { dayIndex: number; type: 'breakfast' | 'lunch' | 'dinner' | 'snack'; mealUpdates: any };
               callbacks.onTranscription(`Updating meal in plan...`, false);
               const result = await callbacks.onUpdateMealInPlan?.(dayIndex, type, mealUpdates);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to update meal in plan" } });
 
             } else if (fc.name === "toggleDayExpansion") {
-              const { dayIndex, expand } = fc.args as { dayIndex: number, expand: boolean };
+              const { dayIndex, expand } = fc.args as { dayIndex: number; expand: boolean };
               callbacks.onTranscription(`${expand ? 'Expanding' : 'Collapsing'} day ${dayIndex + 1}...`, false);
               const result = await callbacks.onToggleDayExpansion?.(dayIndex, expand);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || `Failed to ${expand ? 'expand' : 'collapse'} day` } });
@@ -796,7 +796,7 @@ ${JSON.stringify(deduped)}`;
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to clear meal plan" } });
 
             } else if (fc.name === "openMeal") {
-              const { dayIndex, type } = fc.args as { dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack' };
+              const { dayIndex, type } = fc.args as { dayIndex: number; type: 'breakfast' | 'lunch' | 'dinner' | 'snack' };
               callbacks.onTranscription(`Opening meal...`, false);
               const result = await callbacks.onOpenMeal?.(dayIndex, type);
               responses.push({ name: fc.name, id: fc.id, response: { result: result || "Failed to open meal" } });
@@ -819,7 +819,7 @@ ${JSON.stringify(deduped)}`;
               responses.push({ name: fc.name, id: fc.id, response: { result: `Search query set to "${query}" successfully` } });
 
             } else if (fc.name === "setSearchFilters") {
-              const { store, category } = fc.args as { store?: string, category?: string };
+              const { store, category } = fc.args as { store?: string; category?: string };
               callbacks.onSetSearchFilters?.(store, category);
               callbacks.onTranscription(`Setting search filters...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Search filters set successfully` } });
@@ -842,7 +842,7 @@ ${JSON.stringify(deduped)}`;
               responses.push({ name: fc.name, id: fc.id, response: { result: `Scrolled ${direction} successfully` } });
 
             } else if (fc.name === "highlightObject") {
-              const { normalizedX, normalizedY, label } = fc.args as { normalizedX: number, normalizedY: number, label?: string };
+              const { normalizedX, normalizedY, label } = fc.args as { normalizedX: number; normalizedY: number; label?: string };
               callbacks.onHighlightObject?.(normalizedX, normalizedY, label);
               callbacks.onTranscription(`Highlighting object...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Object highlighted successfully` } });
@@ -852,11 +852,13 @@ ${JSON.stringify(deduped)}`;
               callbacks.onSetCameraState?.(enabled);
               callbacks.onTranscription(`${enabled ? 'Turning on' : 'Turning off'} camera...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Camera turned ${enabled ? 'on' : 'off'} successfully` } });
+
             } else if (fc.name === "setScreenShareState") {
               const { enabled } = fc.args as { enabled: boolean };
               callbacks.onSetScreenShareState?.(enabled);
               callbacks.onTranscription(`${enabled ? 'Starting' : 'Stopping'} screen share...`, false);
               responses.push({ name: fc.name, id: fc.id, response: { result: `Screen share turned ${enabled ? 'on' : 'off'} successfully` } });
+
             } else if (fc.name === "setCameraFacingMode") {
               const { mode } = fc.args as { mode: 'user' | 'environment' };
               callbacks.onSetCameraFacingMode?.(mode);
@@ -865,9 +867,6 @@ ${JSON.stringify(deduped)}`;
             }
           }
           if (responses.length > 0) {
-            // FIX: resolvedSession is always defined by the time onmessage fires
-            // (session opens before any messages arrive), so this is safe and avoids
-            // the sessionPromise.then() anti-pattern used in the original.
             resolvedSession?.sendToolResponse({ functionResponses: responses });
           }
         }
@@ -883,7 +882,6 @@ ${JSON.stringify(deduped)}`;
     }
   });
 
-  // Add a timeout to the connection
   let timeoutId: any;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
@@ -891,16 +889,8 @@ ${JSON.stringify(deduped)}`;
     }, 120000);
   });
 
-  const session = await Promise.race([
-    sessionPromise,
-    timeoutPromise
-  ]);
-
+  const session = await Promise.race([sessionPromise, timeoutPromise]);
   clearTimeout(timeoutId);
-
-  // FIX: Assign to module-scoped resolvedSession so all async tool callbacks
-  // (searchSales, generateMealPlan, etc.) can reference the live session directly
-  // without chaining .then() on the unresolved sessionPromise forward reference.
   resolvedSession = session;
 
   return {

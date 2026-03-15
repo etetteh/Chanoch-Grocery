@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
-import { SaleItem, HealthProfile, ScannedItem, MealPlan, GroceryItem } from "../types";
+import { SaleItem, HealthProfile, ScannedItem, MealPlan, GroceryItem, Meal } from "../types";
 import { sanitizePromptInput } from "../utils/security";
 
 function getAIClient() {
@@ -112,8 +112,8 @@ function robustJsonParse<T>(jsonText: string, fallback: T): T {
 
 export async function analyzeGroceryItem(imageBase64: string, profile: HealthProfile): Promise<ScannedItem | null> {
   try {
-    // Flash Lite is appropriate here — this is a single-image classification task
-    // with a well-defined schema. No price verification or multi-step reasoning needed.
+    // Flash Lite is appropriate here — single-image classification with a well-defined
+    // schema. No price verification or multi-step reasoning needed.
     const model = "gemini-3.1-flash-lite-preview";
 
     const profileContext = `
@@ -180,10 +180,6 @@ export async function analyzeGroceryItem(imageBase64: string, profile: HealthPro
 
 export async function generateMealPlan(groceries: GroceryItem[], profile: HealthProfile, days: number = 3, budget?: number, people?: number, preferences?: string): Promise<MealPlan | null> {
   try {
-    // FIX: Upgraded from flash-lite-preview to the latest stable flash model.
-    // Meal plan generation involves multi-step cost estimation, ingredient substitution
-    // reasoning, and health profile cross-referencing — tasks where flash-lite's reduced
-    // thinking capacity produces incoherent macro calculations and ignores budget constraints.
     const model = "gemini-3.1-flash-preview";
 
     const profileContext = `
@@ -244,12 +240,9 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
       config: {
         systemInstruction,
         tools: [{ googleSearch: {} }],
-        // FIX: ThinkingLevel was LOW. Budget-constrained meal plans require the model to:
-        //   (1) search for ingredient prices, (2) sum costs across multiple meals,
-        //   (3) compare against budget, (4) substitute if over budget.
-        // That is a 4-step multi-tool reasoning chain — LOW thinking drops steps 2-4.
-        // HIGH when budget is specified so cost calculations are actually verified.
-        // MEDIUM otherwise for solid nutritional reasoning without the extra latency.
+        // Budget-constrained plans require multi-step: search prices → sum costs →
+        // compare budget → substitute. LOW thinking drops steps 2-4. HIGH when
+        // budget is specified; MEDIUM otherwise for solid nutritional reasoning.
         thinkingConfig: { thinkingLevel: budget ? ThinkingLevel.HIGH : ThinkingLevel.MEDIUM },
         responseMimeType: "application/json",
         responseSchema: {
@@ -285,14 +278,130 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
   }
 }
 
+/**
+ * Generates exactly one meal for a specific slot and day.
+ *
+ * This is the correct function to call when:
+ *   - The user requests a specific named dish for a specific day/slot
+ *     e.g. "add Ghanaian fufu and peanut butter soup for Tuesday lunch"
+ *   - The user wants an AI-suggested meal for one slot without regenerating the whole plan
+ *
+ * It MUST NOT be used for full multi-day plan generation — use generateMealPlan for that.
+ *
+ * The caller (liveApi.ts tool handler for generateSingleMeal) is responsible for:
+ *   1. Calling this function and serializing the result as JSON.stringify(meal)
+ *   2. The agent then calls addMealToPlan with the data and the correct dayIndex
+ */
+export async function generateSingleMeal(
+  mealName: string,
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack',
+  dayLabel: string,
+  groceries: GroceryItem[],
+  profile: HealthProfile,
+  additionalNotes?: string
+): Promise<Meal | null> {
+  try {
+    const model = "gemini-3.1-flash-preview";
+
+    const safeGroceries = groceries || [];
+    const groceryList = safeGroceries.map(g => `${g.quantity}x ${g.name}`).join(', ');
+
+    const profileContext = `
+      Diet Types: ${profile.dietTypes?.join(', ') || 'None'}
+      Allergies: ${profile.allergies?.join(', ') || 'None'}
+      Health Goals: ${profile.goals?.join(', ') || 'None'}
+      Disliked Ingredients: ${profile.dislikedIngredients?.join(', ') || 'None'}
+    `;
+
+    const systemInstruction = `You are an expert chef and nutritionist specializing in international cuisines.
+Your task is to generate a SINGLE, COMPLETE meal recipe.
+
+CRITICAL CONSTRAINT: The meal you generate MUST be exactly "${mealName}".
+Do NOT suggest a similar dish. Do NOT substitute it with something easier or more common.
+If "${mealName}" is a specific cultural dish (e.g., Ghanaian fufu and groundnut soup, Japanese ramen, Nigerian jollof rice), you MUST generate the authentic version of that exact dish — authentic ingredients, authentic technique, authentic name.
+
+The meal is for ${mealType} on ${dayLabel}.
+${additionalNotes ? `Additional notes from the user: ${additionalNotes}` : ''}
+
+User's Health Profile:
+${profileContext}
+
+Available groceries (use these where possible, assume basic pantry staples like oil, salt, pepper, and spices are available):
+${groceryList || 'None'}
+
+STRICT TOPIC ENFORCEMENT: Only generate food/meal content. If the meal name is completely unrelated to food, return a null-equivalent empty object.
+
+All ingredients MUST include quantities with units (e.g., "500g chicken thighs", "2 cups cassava flour", "3 tablespoons peanut butter"). Do not list bare ingredient names without amounts.
+Macros must be realistic, calculated per serving.
+Recipe instructions must be step-by-step and detailed enough to actually cook the dish.`;
+
+    const response = await getAIClient().models.generateContent({
+      model,
+      contents: `Generate a complete recipe for: ${mealName}`,
+      config: {
+        systemInstruction,
+        // MEDIUM thinking ensures authentic recipes, correct macro calculations,
+        // and ingredient quantities. LOW produces wrong calorie counts and
+        // generic dishes that ignore the cultural specificity of the request.
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: {
+              type: Type.STRING,
+              description: "The exact meal name as requested — do not rename, shorten, or alter it"
+            },
+            description: {
+              type: Type.STRING,
+              description: "A vivid 1-2 sentence description of the dish including its cultural origin"
+            },
+            cuisine: {
+              type: Type.STRING,
+              description: "The cuisine origin (e.g., 'Ghanaian', 'Japanese', 'Italian')"
+            },
+            tags: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "Relevant tags (e.g., ['High Protein', 'West African', 'Gluten-Free'])"
+            },
+            ingredients: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "Complete ingredient list with quantities and units (e.g., '500g chicken thighs', '2 cups cassava flour'). EVERY ingredient must have a quantity."
+            },
+            recipe: {
+              type: Type.STRING,
+              description: "Numbered step-by-step cooking instructions, detailed enough to actually cook the dish"
+            },
+            prepNotes: {
+              type: Type.STRING,
+              description: "Preparation tips, cultural context, make-ahead notes, or serving suggestions"
+            },
+            macros: {
+              type: Type.OBJECT,
+              properties: {
+                calories: { type: Type.NUMBER, description: "Calories per serving (kcal)" },
+                protein: { type: Type.NUMBER, description: "Protein per serving (g)" },
+                carbs: { type: Type.NUMBER, description: "Carbohydrates per serving (g)" },
+                fat: { type: Type.NUMBER, description: "Fat per serving (g)" }
+              },
+              required: ["calories", "protein", "carbs", "fat"]
+            }
+          },
+          required: ["name", "description", "cuisine", "ingredients", "recipe", "macros"]
+        }
+      }
+    });
+
+    return robustJsonParse<Meal | null>(response.text || "{}", null);
+  } catch (error) {
+    console.error("Error generating single meal:", error);
+    return null;
+  }
+}
+
 export async function searchSales(query: string, store?: string, category?: string, lat?: number, lng?: number, accuracy?: number, postalCode?: string): Promise<SaleItem[]> {
-  // FIX: Upgraded from flash-lite-preview to the latest stable flash model.
-  // searchSales is the core factual backbone of the entire agent. Every price the
-  // live agent presents to the user, every addItem call, and every HITL confirmation
-  // depends on the accuracy of this function's output. Flash Lite's reduced capacity
-  // for multi-step web search reasoning (finding the closest branch, cross-referencing
-  // flyer aggregators, verifying addresses) produces hallucinated prices and fake store
-  // addresses — the exact failure mode the system instruction explicitly prohibits.
   const model = "gemini-3.1-flash-lite-preview";
 
   const sanitizedQuery = sanitizePromptInput(query);
@@ -360,13 +469,10 @@ Return JSON array of objects:
       config: {
         systemInstruction,
         tools: [{ googleSearch: {} }],
-        // FIX: ThinkingLevel was LOW. searchSales must perform a multi-step reasoning
-        // chain: (1) query flyer aggregators, (2) query official store websites,
-        // (3) locate the closest branch via coordinates, (4) cross-reference and
-        // de-duplicate prices, (5) rank by price. LOW thinking drops steps 3-5,
-        // producing the exact hallucinated addresses and estimated prices the system
-        // instruction explicitly prohibits. MEDIUM provides the necessary depth for
-        // reliable web search grounding without excessive latency.
+        // searchSales must perform multi-step reasoning: query flyer aggregators →
+        // query store websites → locate closest branch → de-duplicate → rank by price.
+        // LOW thinking drops steps 3-5, producing hallucinated addresses and estimated
+        // prices. MEDIUM provides the necessary depth without excessive latency.
         thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
         responseMimeType: "application/json",
         maxOutputTokens: 8192,
@@ -379,10 +485,6 @@ Return JSON array of objects:
               price: { type: Type.STRING, description: "Current price" },
               originalPrice: { type: Type.STRING, description: "Original or regular price" },
               isOnSale: { type: Type.BOOLEAN, description: "Whether the item is on sale" },
-              // FIX: validFrom was present in the system instruction, in addItem's tool
-              // schema, and in the SaleItem type — but was missing from this responseSchema.
-              // The model probabilistically omitted it, causing addItem to silently receive
-              // undefined validFrom even when the search result contained sale start dates.
               validFrom: { type: Type.STRING, description: "Date the sale starts (e.g., 'Mar 13')" },
               validUntil: { type: Type.STRING, description: "Date the sale ends" },
               store: { type: Type.STRING, description: "Store name" },
@@ -402,8 +504,8 @@ Return JSON array of objects:
     const items = robustJsonParse<any[]>(response.text || "[]", []);
 
     const mappedItems = items.map((item: any, index: number) => {
-      // Always generate a reliable Google Maps search URL instead of trusting AI-generated links
-      // AI-generated links are often malformed (e.g., missing place IDs or empty coordinates)
+      // Always generate a reliable Google Maps search URL instead of trusting
+      // AI-generated links — they are often malformed (missing place IDs, empty coords)
       const query = encodeURIComponent(`${item.store || ''} ${item.address || ''}`.trim());
       const reliableMapsUri = `https://www.google.com/maps/search/?api=1&query=${query}`;
 
@@ -444,10 +546,9 @@ Do NOT include stores that do not operate in that region (e.g., do not include C
 
   try {
     const response = await getAIClient().models.generateContent({
-      // This is a simple regional availability check — flash-lite is appropriate here.
-      // The task is single-step (does chain X operate in region Y?) with no price
-      // verification or multi-hop reasoning. LOW thinking is also appropriate since
-      // this fires on session start and impacts perceived cold-start latency.
+      // Simple regional availability check — flash-lite is appropriate here.
+      // Single-step (does chain X operate in region Y?), no price verification,
+      // no multi-hop reasoning. LOW thinking keeps cold-start latency minimal.
       model: "gemini-3.1-flash-lite-preview",
       contents: userPrompt,
       config: {
