@@ -401,11 +401,12 @@ export default function LiveAssistant({
                 userLocation?.accuracy,
                 postalCode,
               );
+              const safeResults = results || [];
               if (callbacksRef.current.onSearch) {
-                callbacksRef.current.onSearch(query, results, store);
+                callbacksRef.current.onSearch(query, safeResults, store);
               }
-              if (results.length === 0) return t("no_results");
-              return results
+              if (safeResults.length === 0) return t("no_results");
+              return safeResults
                 .map(
                   (r) =>
                     `[DEAL] Item: ${r.name} | Store: ${r.store} | Price: ${r.price} | Original Price: ${r.originalPrice || "N/A"} | Valid Until: ${r.validUntil || "N/A"} | Distance: ${r.distance || "nearby"} | Address: ${r.address} | Maps: ${r.mapsUri}`,
@@ -474,9 +475,10 @@ export default function LiveAssistant({
                 return Promise.all(results);
               };
 
-              await processItems(items, 3); // Concurrency limit of 3
+              await processItems(items || [], 3); // Concurrency limit of 3
 
-              return `Successfully found and added ${addedCount} out of ${items.length} items to the shopping list.`;
+              const safeItems = items || [];
+              return `Successfully found and added ${addedCount} out of ${safeItems.length} items to the shopping list.`;
             } catch (error) {
               console.error("Live search and add multiple failed:", error);
               return "Failed to search and add multiple items.";

@@ -41,7 +41,7 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
 
   // Initialize expanded days
   useEffect(() => {
-    if (!mealPlan) {
+    if (!mealPlan || !mealPlan.days) {
       setExpandedDays(prev => Object.keys(prev).length > 0 ? {} : prev);
     } else {
       setExpandedDays(prev => {
@@ -58,7 +58,8 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
   }, [mealPlan, setExpandedDays]);
 
   const handleGenerate = async () => {
-    if (groceries.length === 0 && !preferences.trim()) {
+    const safeGroceries = groceries || [];
+    if (safeGroceries.length === 0 && !preferences.trim()) {
       setError('Please add items to your grocery list or provide some preferences to generate a meal plan.');
       return;
     }
@@ -73,8 +74,8 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
     setError(null);
 
     try {
-      const plan = await generateMealPlan(groceries, profile, days, parsedBudget, undefined, preferences.trim() || undefined);
-      if (plan) {
+      const plan = await generateMealPlan(safeGroceries, profile, days, parsedBudget, undefined, preferences.trim() || undefined);
+      if (plan && plan.days && plan.days.length > 0) {
         setMealPlan(plan);
       } else {
         setError('Failed to generate meal plan. Please try again.');

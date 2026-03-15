@@ -49,7 +49,7 @@ export function SpeedDial({
   return (
     <div ref={containerRef} className={cn(`relative flex flex-col ${alignClass}`, className)}>
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && actions && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

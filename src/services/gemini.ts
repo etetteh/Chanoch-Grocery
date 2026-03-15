@@ -11,6 +11,7 @@ function getAIClient() {
 }
 
 function robustJsonParse<T>(jsonText: string, fallback: T): T {
+  if (!jsonText) return fallback;
   let cleanedText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
   if (!cleanedText) return fallback;
 
@@ -191,7 +192,8 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
       Health Goals: ${profile.goals?.join(', ') || 'None'}
     `;
 
-    const groceryList = groceries.map(g => `${g.quantity}x ${g.name}`).join(', ');
+    const safeGroceries = groceries || [];
+    const groceryList = safeGroceries.map(g => `${g.quantity}x ${g.name}`).join(', ');
 
     const today = new Date();
     const currentDay = today.toLocaleDateString('en-US', { weekday: 'long' });
@@ -199,7 +201,7 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
     const systemInstruction = `You are an expert meal planner and nutritionist.
     Today is ${currentDay}. Start the meal plan from today.
     Create a ${days}-day meal plan based on the user's health profile.
-    ${groceries.length > 0 ? "Try to utilize the provided groceries as much as possible, but you can assume basic pantry staples (oil, salt, pepper, basic spices) are available." : "The user's grocery list is currently empty. Generate a meal plan, and the user will purchase the necessary ingredients later."}
+    ${safeGroceries.length > 0 ? "Try to utilize the provided groceries as much as possible, but you can assume basic pantry staples (oil, salt, pepper, basic spices) are available." : "The user's grocery list is currently empty. Generate a meal plan, and the user will purchase the necessary ingredients later."}
     
     ${people ? `The meal plan is for ${people} people.` : ''}
     ${budget ? `The total budget for the meal plan is $${budget}. You MUST use the googleSearch tool to check current market prices for the ingredients you are suggesting. Calculate the total estimated cost of all ingredients required for this meal plan. If the total estimated cost exceeds the user's budget of $${budget}, you MUST provide a 'budgetWarning' explaining which items are driving up the cost and suggesting cheaper alternatives.` : 'You MUST use the googleSearch tool to check current market prices for the ingredients you are suggesting and calculate the total estimated cost.'}
@@ -231,7 +233,8 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
             fat: { type: Type.NUMBER }
           }
         }
-      }
+      },
+      required: ["name", "description", "ingredients"]
     };
 
     const response = await getAIClient().models.generateContent({
@@ -262,12 +265,14 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
                   lunch: mealSchema,
                   dinner: mealSchema,
                   snack: mealSchema
-                }
+                },
+                required: ["day"]
               }
             },
             estimatedCost: { type: Type.NUMBER, description: "The total estimated cost of all ingredients required for the meal plan based on current market prices." },
             budgetWarning: { type: Type.STRING, description: "If the estimatedCost exceeds the user's budget, provide a warning message explaining why and suggesting cheaper alternatives." }
-          }
+          },
+          required: ["days"]
         }
       }
     });
@@ -493,7 +498,7 @@ Do NOT include stores that do not operate in that region (e.g., do not include C
 
     const validStoreNames = robustJsonParse<string[]>(response.text || "[]", []);
 
-    if (validStoreNames.length === 0) {
+    if (!validStoreNames || validStoreNames.length === 0) {
       return stores; // Fallback to all stores if the AI fails or returns empty
     }
 

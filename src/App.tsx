@@ -311,10 +311,11 @@ export default function App() {
     setSearchError(null);
     try {
       const results = await searchSales(query, store, cat, userLocation?.lat, userLocation?.lng, userLocation?.accuracy, pc);
-      if (results.length === 0 && query) {
+      const safeResults = results || [];
+      if (safeResults.length === 0 && query) {
         setSearchError("No deals found for this search. Try a different item or store.");
       }
-      setSaleResults(results);
+      setSaleResults(safeResults);
     } catch (error) {
       console.error("Search failed:", error);
       setSearchError("Something went wrong while searching for deals. Please try again.");
@@ -367,6 +368,7 @@ export default function App() {
   };
 
   const removeFromListByName = (name: string) => {
+    if (!name) return;
     const search = name.toLowerCase()
       .replace(/^(remove|delete|take off|get rid of|the|a|an)\s+/g, '')
       .trim();
@@ -401,6 +403,7 @@ export default function App() {
   };
 
   const updateItemInList = (originalName: string, updates: { name?: string, quantity?: number, store?: string, price?: string }) => {
+    if (!originalName) return;
     const search = originalName.toLowerCase()
       .replace(/^(update|change|modify|edit|the|a|an)\s+/g, '')
       .trim();
@@ -1537,13 +1540,14 @@ export default function App() {
                 setScanTrigger(prev => prev + 1);
               }}
               onSearch={(query, results, store) => {
+                const safeResults = results || [];
                 setSearchQuery(query);
-                setSaleResults(results);
+                setSaleResults(safeResults);
                 if (store) {
                   const exactStore = filteredStores.map(s => s.name).find(s => s.toLowerCase() === store.toLowerCase());
                   setSelectedStore(exactStore || store);
                 }
-                setSearchError(results.length === 0 ? "No deals found for this search. Try a different item or store." : null);
+                setSearchError(safeResults.length === 0 ? "No deals found for this search. Try a different item or store." : null);
                 setActiveTab('search');
               }}
               onUpdateProfile={(dietTypes, allergies, goals, dislikedIngredients) => {
@@ -1582,7 +1586,7 @@ export default function App() {
               }}
               onAddMealToPlan={(dayIndex, type, meal) => {
                 let currentPlan = mealPlan;
-                if (!currentPlan || currentPlan.days.length === 0) {
+                if (!currentPlan || !currentPlan.days || currentPlan.days.length === 0) {
                   // Create a default 7-day meal plan starting from today
                   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                   const todayIndex = new Date().getDay();
@@ -1608,7 +1612,7 @@ export default function App() {
                 return `Successfully added ${meal.name} to day ${dayIndex + 1} for ${type}.`;
               }}
               onRemoveMealFromPlan={(dayIndex, type) => {
-                if (!mealPlan) return "No meal plan exists.";
+                if (!mealPlan || !mealPlan.days) return "No meal plan exists.";
                 if (dayIndex < 0 || dayIndex >= mealPlan.days.length) return "Invalid day index.";
                 const updatedPlan = { ...mealPlan };
                 delete updatedPlan.days[dayIndex][type];
@@ -1616,7 +1620,7 @@ export default function App() {
                 return `Successfully removed meal from day ${dayIndex + 1} for ${type}.`;
               }}
               onUpdateMealInPlan={(dayIndex, type, mealUpdates) => {
-                if (!mealPlan) return "No meal plan exists.";
+                if (!mealPlan || !mealPlan.days) return "No meal plan exists.";
                 if (dayIndex < 0 || dayIndex >= mealPlan.days.length) return "Invalid day index.";
                 const existingMeal = mealPlan.days[dayIndex][type];
                 if (!existingMeal) return "No meal exists at that slot to update.";

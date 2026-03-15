@@ -62,7 +62,7 @@ graph TD
 
     subgraph GeminiAPIs [Google GenAI Services]
         GeminiLive[Gemini 2.5 Flash Native Audio\nLive API WebSocket]
-        GeminiFlash[Gemini 3.1 Flash Lite\nwith Search Grounding]
+        GeminiFlash[Gemini 3.1 Flash / Lite\nwith Search Grounding]
     end
 
     User <-->|Voice| Mic
@@ -73,17 +73,19 @@ graph TD
     Camera -->|Base64 JPEG Frames| UI
     UI <-->|Save/Load Data| LocalStorage
 
-    UI <-->|HTTPS / WSS| AppServer
+    UI <-->|HTTPS: Serves App| AppServer
 
-    AppServer <-->|WebSocket: Audio/Video/Text| GeminiLive
+    UI <-->|WebSocket: Audio/Video/Text| GeminiLive
     
     UI -->|Context: Location, List, Profile| GeminiLive
     
-    GeminiLive -->|Tool Call: searchSales| AppServer
-    AppServer -->|REST API| GeminiFlash
+    GeminiLive -->|Tool Call: searchSales| UI
+    GeminiLive -->|Tool Call: searchAndAddMultipleItems| UI
+    
+    UI -->|REST API| GeminiFlash
     GeminiFlash -->|Web Search| Internet[(Live Web Data)]
-    GeminiFlash -->|JSON Results| AppServer
-    AppServer -->|Deal Data| GeminiLive
+    GeminiFlash -->|JSON Results| UI
+    UI -->|Deal Data / Function Response| GeminiLive
     
     GeminiLive -->|Tool Call: highlightObject| UI
     GeminiLive -->|Tool Call: navigateTab| UI
@@ -96,7 +98,7 @@ graph TD
 
 ## 🆕 Recent Updates & Fixes
 ### Recent Enhancements
-- **Model Upgrade**: Migrated the core deal-hunting and search grounding engine to `gemini-3.1-flash-lite-preview` for faster, more efficient processing.
+- **Model Upgrade**: Migrated the core deal-hunting and meal planning engine to `gemini-3.1-flash-preview` for complex reasoning, and `gemini-3.1-flash-lite-preview` for fast, lightweight location filtering.
 - **Auto-Reconnection**: Implemented robust auto-reconnect logic for the Live API to handle session timeouts and unexpected closures gracefully without interrupting the user experience.
 - **UI Navigator Capabilities**: Enhanced the agent's ability to act as a UI Navigator by adding precise spatial highlighting (`highlightObject`) and semantic tab navigation (`navigateTab`).
 - **UI/UX Refinements**: Added interactive hover effects to all navigation buttons, list items, and action controls for a more responsive and "crafted" feel.
@@ -117,6 +119,61 @@ graph TD
 5. Run `npm run dev` to start the development server.
 6. Open `http://localhost:3000` in your browser.
 7. *Note: For the Live Assistant (voice/camera) and Geolocation to work, the app must be served over HTTPS or accessed via `localhost`.*
+
+## 🧪 Reproducible Testing Instructions
+
+Welcome, Judges! Follow these steps to run Chanoch Grocery locally and experience the Gemini Live Agent capabilities firsthand.
+
+### 1. Prerequisites
+*   **Node.js** (v18 or higher)
+*   A **Gemini API Key** with access to the Gemini Live API (`gemini-2.5-flash-native-audio-preview-12-2025`) and Gemini 3.1 Flash models.
+
+### 2. Local Setup
+1.  **Clone the repository:**
+    ```bash
+    git clone <your-repo-url>
+    cd chanoch-grocery
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Configure Environment Variables:**
+    Create a `.env` file in the root directory and add your Gemini API key:
+    ```env
+    GEMINI_API_KEY=your_api_key_here
+    ```
+4.  **Start the development server:**
+    ```bash
+    npm run dev
+    ```
+5.  Open your browser and navigate to `http://localhost:3000`. *(Note: Please ensure you grant Microphone, Camera, and Location permissions when prompted, as they are required for the multimodal and location-aware features).*
+
+---
+
+### 3. Testing Scenarios (How to test the features)
+
+To fully experience the Live Agent, click the **Microphone/Live** button to start a session, and try the following scenarios:
+
+#### Scenario 1: Hands-Free UI Navigation
+*   **Action:** Speak to the agent and say, *"Show me my meal plan,"* or *"Navigate to my health profile."*
+*   **Expected Result:** The agent will autonomously trigger the `onNavigateTab` tool and physically switch the UI tabs on your screen without you touching the mouse. You can also say *"Scroll down"* to test the scrolling tool.
+
+#### Scenario 2: Multimodal Vision & The "Digital Laser Pointer"
+*   **Action:** Click the **Camera** icon to enable your video feed. Hold up a grocery item (e.g., a piece of fruit or a pantry item) to the camera. Ask the agent, *"What is this, and can you highlight it for me?"*
+*   **Expected Result:** The agent will use its vision capabilities to identify the item and trigger the `onHighlightObject` tool, drawing a pulsing green circle directly over the item on your screen.
+
+#### Scenario 3: Budget-Constrained Meal Planning (Reasoning & Search)
+*   **Action:** Say, *"Create a 3-day meal plan for 2 people with a budget of $40."*
+*   **Expected Result:** The agent will use Google Search Grounding to check current ingredient prices, calculate the estimated total, and generate a meal plan. If the plan exceeds $40, it will issue a `budgetWarning` and suggest cheaper alternatives.
+
+#### Scenario 4: Location-Aware Deal Hunting
+*   **Action:** Ensure your location permissions are granted. Ask the agent, *"Find me the best deal for a gallon of milk nearby."*
+*   **Expected Result:** The agent will read your injected GPS coordinates, filter for grocery stores actually located in your region, and use the `onSearchSales` tool to find and read out the best local price.
+
+#### Scenario 5: Autonomous Multilingual UI Switching
+*   **Action:** Speak to the agent in Spanish (e.g., *"Hola, ¿puedes ayudarme a comprar comida?"*) or French.
+*   **Expected Result:** The agent will detect the language change, respond in that language, and autonomously trigger the `onSetAppLanguage` tool to instantly translate the entire application's UI text to match your spoken language.
 
 ## 💡 Learnings & Findings
 - **Speed vs. Accuracy**: We learned that forcing the AI to search for deals can sometimes be slow. We optimized this by instructing the agent to simplify search queries (e.g., "tomato paste" instead of "small size tomato paste") and limiting the JSON output size to prevent truncation.

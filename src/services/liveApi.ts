@@ -661,16 +661,17 @@ If the user's requested day is not in the schedule table, inform them instead of
 
             } else if (fc.name === "searchAndAddMultipleItems") {
               const { items } = fc.args as { items: string[] };
-              callbacks.onTranscription(`Searching and adding ${items.length} items...`, false);
+              const safeItems = items || [];
+              callbacks.onTranscription(`Searching and adding ${safeItems.length} items...`, false);
 
               // FIX: Same three fixes applied — pure data injection, .catch() added,
               // resolvedSession used directly.
-              callbacks.onSearchAndAddMultipleItems?.(items)
+              callbacks.onSearchAndAddMultipleItems?.(safeItems)
                 .then(result => {
                   resolvedSession?.sendClientContent({
                     turns: [{
                       role: "user",
-                      parts: [{ text: `[BATCH_ADD_RESULT for ${items.length} items]\n${result}\n[END_BATCH_ADD_RESULT]` }]
+                      parts: [{ text: `[BATCH_ADD_RESULT for ${safeItems.length} items]\n${result}\n[END_BATCH_ADD_RESULT]` }]
                     }],
                     turnComplete: true
                   });
@@ -680,7 +681,7 @@ If the user's requested day is not in the schedule table, inform them instead of
                   resolvedSession?.sendClientContent({
                     turns: [{
                       role: "user",
-                      parts: [{ text: `[BATCH_ADD_RESULT for ${items.length} items]\nBatch add failed due to an error: ${err?.message || 'Unknown error'}. Inform the user and ask if they would like to try again.\n[END_BATCH_ADD_RESULT]` }]
+                      parts: [{ text: `[BATCH_ADD_RESULT for ${safeItems.length} items]\nBatch add failed due to an error: ${err?.message || 'Unknown error'}. Inform the user and ask if they would like to try again.\n[END_BATCH_ADD_RESULT]` }]
                     }],
                     turnComplete: true
                   });
