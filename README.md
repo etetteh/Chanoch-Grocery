@@ -47,7 +47,7 @@ The agent operates on a robust, multi-layered architecture:
 
 ## 🏗️ Architecture Diagram
 
-![Architecture Diagram](/architecture.png)
+![Architecture Diagram](./architecture.png)
 
 ## 🆕 Recent Updates & Fixes
 ### Recent Enhancements
