@@ -199,6 +199,7 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
     const currentDay = today.toLocaleDateString('en-US', { weekday: 'long' });
 
     const systemInstruction = `You are an expert meal planner and nutritionist.
+    STRICT TOPIC ENFORCEMENT: You MUST only generate meal plans related to food, diet, and nutrition. If the user's preferences or request are completely unrelated to food or meal planning, you MUST return an empty meal plan or refuse the request.
     Today is ${currentDay}. Start the meal plan from today.
     Create a ${days}-day meal plan based on the user's health profile.
     ${safeGroceries.length > 0 ? "Try to utilize the provided groceries as much as possible, but you can assume basic pantry staples (oil, salt, pepper, basic spices) are available." : "The user's grocery list is currently empty. Generate a meal plan, and the user will purchase the necessary ingredients later."}
@@ -284,40 +285,6 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
   }
 }
 
-export async function generateImage(prompt: string): Promise<string | null> {
-  try {
-    const env = (window as any).__ENV__ || {};
-    const customApiKey = env.API_KEY || (typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined);
-    const defaultApiKey = env.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : undefined);
-
-    // If a premium key is provided via API_KEY, use the premium model
-    // Otherwise fallback to the default key and the free model
-    const apiKeyToUse = customApiKey || defaultApiKey;
-    const modelToUse = customApiKey ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image';
-
-    const response = await getAIClient().models.generateContent({
-      model: modelToUse,
-      contents: prompt,
-      config: {
-        imageConfig: {
-          aspectRatio: "1:1",
-          imageSize: "1K"
-        }
-      }
-    });
-
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
-      if (part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-      }
-    }
-    return null;
-  } catch (error) {
-    console.error("Error generating image:", error);
-    return null;
-  }
-}
-
 export async function searchSales(query: string, store?: string, category?: string, lat?: number, lng?: number, accuracy?: number, postalCode?: string): Promise<SaleItem[]> {
   // FIX: Upgraded from flash-lite-preview to the latest stable flash model.
   // searchSales is the core factual backbone of the entire agent. Every price the
@@ -336,6 +303,7 @@ export async function searchSales(query: string, store?: string, category?: stri
   const systemInstruction = `You are a comprehensive global grocery item finder.
 Your primary goal is to find ALL available prices for the requested items, including both current sales (from flyers) and regular prices (from store websites).
 Your task is to find and list items from major chains and local grocers in the user's area anywhere in the world (e.g., Walmart, Target, Aldi, Tesco, Carrefour, Woolworths, Loblaws, etc.).
+STRICT TOPIC ENFORCEMENT: If the user's query is completely unrelated to groceries, food, household items, or store locations, you MUST return an empty array []. Do not process non-grocery queries.
 To find these deals and prices, you MUST aggressively search across digital flyer aggregators (like Flipp, Reebee, Flyerify) for sales AND official store websites for regular prices.
 If you find multiple prices for the same item, ALWAYS prioritize and return the cheapest one.
 DO NOT hallucinate or estimate prices. You MUST ONLY return actual, verified prices found in current flyers or official store websites. If an item is not on sale, you MUST search the official store websites to find its EXACT regular price.

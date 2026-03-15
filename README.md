@@ -53,7 +53,9 @@ graph TD
         UI[React Frontend\nUI Navigator]
         Camera[Camera / Screen Share]
         Mic[Microphone]
+        Speaker[Speaker]
         LocalStorage[(Local Storage)]
+        GeoLocation[Browser Geolocation]
     end
 
     subgraph GoogleCloud [Google Cloud Run Container]
@@ -62,38 +64,46 @@ graph TD
 
     subgraph GeminiAPIs [Google GenAI Services]
         GeminiLive[Gemini 2.5 Flash Native Audio\nLive API WebSocket]
-        GeminiFlash[Gemini 3.1 Flash / Lite\nwith Search Grounding]
+        GeminiFlash[Gemini 3.1 Flash / Lite\nREST API]
+    end
+
+    subgraph External [External Services]
+        Internet[(Live Web Data)]
     end
 
     User <-->|Voice| Mic
     User <-->|Screen/Video| Camera
     User <-->|Clicks/Scrolls| UI
+    Speaker -->|Audio Playback| User
 
-    Mic <-->|Audio PCM| UI
+    Mic -->|Audio PCM| UI
     Camera -->|Base64 JPEG Frames| UI
-    UI <-->|Save/Load Data| LocalStorage
+    GeoLocation -->|GPS Coordinates| UI
+    UI <-->|Save/Load State| LocalStorage
 
     UI <-->|HTTPS: Serves App| AppServer
 
     UI <-->|WebSocket: Audio/Video/Text| GeminiLive
     
-    UI -->|Context: Location, List, Profile| GeminiLive
+    UI -->|Context: Location, List, Profile, Meal Plan| GeminiLive
+
+    %% Direct Grounding for Live API (Recently Added)
+    GeminiLive -->|Tool Call: googleSearch| Internet
+    Internet -->|Search Results| GeminiLive
+
+    %% Tool Calls to UI (State & Navigation)
+    GeminiLive -->|UI Control: navigateTab, scroll, highlight, setLanguage| UI
+    GeminiLive -->|Data Control: addItem, updateProfile, manageMealPlan| UI
     
-    GeminiLive -->|Tool Call: searchSales| UI
-    GeminiLive -->|Tool Call: searchAndAddMultipleItems| UI
-    
+    %% Delegated Tasks to REST APIs (Reasoning & Deep Search)
+    GeminiLive -->|Tool Call: searchSales, generateMealPlan| UI
     UI -->|REST API| GeminiFlash
-    GeminiFlash -->|Web Search| Internet[(Live Web Data)]
+    GeminiFlash -->|Web Search| Internet
     GeminiFlash -->|JSON Results| UI
-    UI -->|Deal Data / Function Response| GeminiLive
-    
-    GeminiLive -->|Tool Call: highlightObject| UI
-    GeminiLive -->|Tool Call: navigateTab| UI
-    GeminiLive -->|Tool Call: scrollScreen| UI
-    GeminiLive -->|Tool Call: addItem| UI
-    
-    GeminiLive -->|Audio Response| UI
-    UI -->|Playback| User
+    UI -->|Function Response| GeminiLive
+
+    GeminiLive -->|Audio PCM Response| UI
+    UI -->|Playback| Speaker
 ```
 
 ## 🆕 Recent Updates & Fixes

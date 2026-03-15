@@ -16,7 +16,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
 import { connectToLive, LiveSession } from "../services/liveApi";
-import { searchSales, generateImage } from "../services/gemini";
+import { searchSales } from "../services/gemini";
 import { Button } from "./ui/button";
 import { SpeedDial } from "./ui/speed-dial";
 import { CircularProgress } from "@mui/material";
@@ -134,8 +134,6 @@ export default function LiveAssistant({
   } | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [highlights, setHighlights] = useState<
@@ -482,22 +480,6 @@ export default function LiveAssistant({
             } catch (error) {
               console.error("Live search and add multiple failed:", error);
               return "Failed to search and add multiple items.";
-            }
-          },
-          onGenerateImage: async (prompt) => {
-            setIsGeneratingImage(true);
-            try {
-              const imageBase64 = await generateImage(prompt);
-              if (imageBase64) {
-                setGeneratedImage(imageBase64);
-                return "Image generated successfully";
-              }
-              return "Failed to generate image";
-            } catch (err) {
-              console.error("Image generation failed:", err);
-              return "Failed to generate image";
-            } finally {
-              setIsGeneratingImage(false);
             }
           },
           onUpdateProfile: (
@@ -1440,53 +1422,6 @@ export default function LiveAssistant({
                     </p>
                   </div>
                 </div>
-
-                {/* Generated Image Display */}
-                <AnimatePresence>
-                  {(generatedImage || isGeneratingImage) && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                      className="w-full max-w-sm bg-black/60 backdrop-blur-xl rounded-3xl p-4 border border-white/10 shadow-2xl pointer-events-auto relative overflow-hidden"
-                    >
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-bold uppercase tracking-widest text-brand-400">
-                          Generated Image
-                        </span>
-                        {generatedImage && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setGeneratedImage(null)}
-                            className="w-6 h-6 bg-white/10 hover:bg-white/20 hover:scale-110 active:scale-90 rounded-full transition-all text-white"
-                          >
-                            <X size={14} />
-                          </Button>
-                        )}
-                      </div>
-                      <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center">
-                        {isGeneratingImage ? (
-                          <div className="flex flex-col items-center gap-3">
-                            <CircularProgress
-                              size={32}
-                              sx={{ color: "#10b981" }}
-                            />
-                            <span className="text-xs text-emerald-400 font-medium animate-pulse">
-                              Generating...
-                            </span>
-                          </div>
-                        ) : generatedImage ? (
-                          <img
-                            src={generatedImage}
-                            alt="Generated meal"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : null}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
 
                 {/* Astra Glowing Orb / Waveform */}
                 <div
