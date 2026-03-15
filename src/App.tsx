@@ -1676,7 +1676,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed bottom-32 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-2xl pointer-events-none flex justify-end"
+            className="fixed bottom-44 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-2xl pointer-events-none flex justify-end"
           >
             <button
               onClick={() => setIsLiveAssistantOpen(true)}
@@ -1691,7 +1691,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bottom Navigation */}
-      <nav role="navigation" aria-label="Main navigation" className="fixed bottom-0 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-full sm:w-[95%] max-w-2xl">
+      <nav role="navigation" aria-label="Main navigation" className="fixed bottom-[48px] sm:bottom-[72px] left-1/2 -translate-x-1/2 z-40 w-full sm:w-[95%] max-w-2xl">
         <BottomNavigation
           value={activeTab}
           onChange={(event, newValue) => {
@@ -1765,17 +1765,19 @@ export default function App() {
       </nav>
 
       {/* Footer Info */}
-      <footer className="max-w-md mx-auto px-6 pt-4 pb-32 text-center space-y-4">
-        <div className="flex items-center justify-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-500">
-          <button className="hover:text-brand-600 transition-colors">{t('footer_help')}</button>
-          <div className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
-          <button className="hover:text-brand-600 transition-colors">{t('footer_privacy')}</button>
-          <div className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
-          <button className="hover:text-brand-600 transition-colors">{t('footer_terms')}</button>
+      <footer className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-white/10 py-2">
+        <div className="flex flex-col items-center justify-center space-y-1">
+          <div className="flex items-center justify-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-500">
+            <button className="hover:text-brand-600 transition-colors">{t('footer_help') || 'Help'}</button>
+            <div className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
+            <button className="hover:text-brand-600 transition-colors">{t('footer_privacy') || 'Privacy'}</button>
+            <div className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
+            <button className="hover:text-brand-600 transition-colors">{t('footer_terms') || 'Terms'}</button>
+          </div>
+          <p className="text-[10px] text-slate-600 dark:text-slate-500 font-medium">
+            &copy; 2026 Chanoch. AI-powered shopping assistant.
+          </p>
         </div>
-        <p className="text-[10px] text-slate-600 dark:text-slate-500 font-medium">
-          &copy; {new Date().getFullYear()} Chanoch. AI-powered grocery deals.
-        </p>
       </footer>
 
       {/* Info Modal */}
