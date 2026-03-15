@@ -159,6 +159,7 @@ You have access to several tools. Use them appropriately based on the user's req
 14. Camera Control: Use 'setCameraState' to turn the user's camera on or off. You should explain to the user why you are turning it on (e.g., "I'm turning on your camera so I can see what you're looking at").
 15. Screen Share: The user can share their screen with you using the "Share Screen" button. If they do, you will see their screen instead of their camera.
 16. Scan Item: Use 'scanItem' to trigger the app's built-in barcode/product scanner when the user asks to scan a product on the scan page.
+17. Web Search: Use the 'googleSearch' tool to answer general questions, find recipes, or look up information that requires real-time web access.
 </Capabilities and Tools>
 
 <Tone and Format>
@@ -552,7 +553,8 @@ If the user's requested day is not in the schedule table, inform them instead of
               }
             }
           ]
-        }
+        },
+        { googleSearch: {} }
       ]
     },
     callbacks: {

@@ -185,8 +185,8 @@ To fully experience the Live Agent, click the **Microphone/Live** button to star
 - **Handling Interruptions**: The Live API's native ability to handle interruptions makes the voice agent feel incredibly natural, much like a real human assistant.
 
 ## 🏆 Challenge Categories Targeted
-- **UI Navigator 🖱️**: The agent demonstrates visual precision by observing the screen (via screen share), highlighting specific UI elements, and executing semantic actions (navigating tabs, scrolling, expanding items) without relying on brittle "blind clicking".
 - **Live Agents 🗣️**: Real-time, interruptible voice and vision interaction using the Gemini 2.5 Flash Native Audio Live API.
+- **UI Navigator 🖱️**: The agent demonstrates visual precision by observing the screen (via screen share), highlighting specific UI elements, and executing semantic actions (navigating tabs, scrolling, expanding items) without relying on brittle "blind clicking".
 - **Best Multimodal Integration & User Experience**: Seamless blending of voice, vision, location, and a highly polished UI.
 - **Best Technical Execution & Agent Architecture**: Complex tool use, context management, and search grounding integration.
 
