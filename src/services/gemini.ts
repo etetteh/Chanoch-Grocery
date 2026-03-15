@@ -183,7 +183,7 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
     // Meal plan generation involves multi-step cost estimation, ingredient substitution
     // reasoning, and health profile cross-referencing — tasks where flash-lite's reduced
     // thinking capacity produces incoherent macro calculations and ignores budget constraints.
-    const model = "gemini-3.1-flash-lite-preview";
+    const model = "gemini-3.1-flash-preview";
 
     const profileContext = `
       Diet Types: ${profile.dietTypes?.join(', ') || 'None'}
