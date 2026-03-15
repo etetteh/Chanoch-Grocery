@@ -155,23 +155,27 @@ Welcome, Judges! Follow these steps to run Chanoch Grocery locally and experienc
 
 To fully experience the Live Agent, click the **Microphone/Live** button to start a session, and try the following scenarios:
 
-#### Scenario 1: Hands-Free UI Navigation
+#### Scenario 1: Live Agent Grocery Search & List Management
+*   **Action:** Click the Microphone button to start the Live Agent. Speak naturally and say, *"Find me the best deal on eggs nearby,"* or *"Can you search for avocados on sale?"*
+*   **Expected Result:** The Live Agent will use your location and the `searchSales` tool to find real-time prices. It will speak the results back to you. You can then say, *"Add the cheapest one to my list,"* and watch the agent autonomously add the item to your grocery list.
+
+#### Scenario 2: Hands-Free UI Navigation
 *   **Action:** Speak to the agent and say, *"Show me my meal plan,"* or *"Navigate to my health profile."*
 *   **Expected Result:** The agent will autonomously trigger the `onNavigateTab` tool and physically switch the UI tabs on your screen without you touching the mouse. You can also say *"Scroll down"* to test the scrolling tool.
 
-#### Scenario 2: Multimodal Vision & The "Digital Laser Pointer"
+#### Scenario 3: Multimodal Vision & The "Digital Laser Pointer"
 *   **Action:** Click the **Camera** icon to enable your video feed. Hold up a grocery item (e.g., a piece of fruit or a pantry item) to the camera. Ask the agent, *"What is this, and can you highlight it for me?"*
 *   **Expected Result:** The agent will use its vision capabilities to identify the item and trigger the `onHighlightObject` tool, drawing a pulsing green circle directly over the item on your screen.
 
-#### Scenario 3: Budget-Constrained Meal Planning (Reasoning & Search)
+#### Scenario 4: Budget-Constrained Meal Planning (Reasoning & Search)
 *   **Action:** Say, *"Create a 3-day meal plan for 2 people with a budget of $40."*
 *   **Expected Result:** The agent will use Google Search Grounding to check current ingredient prices, calculate the estimated total, and generate a meal plan. If the plan exceeds $40, it will issue a `budgetWarning` and suggest cheaper alternatives.
 
-#### Scenario 4: Location-Aware Deal Hunting
+#### Scenario 5: Location-Aware Deal Hunting
 *   **Action:** Ensure your location permissions are granted. Ask the agent, *"Find me the best deal for a gallon of milk nearby."*
 *   **Expected Result:** The agent will read your injected GPS coordinates, filter for grocery stores actually located in your region, and use the `onSearchSales` tool to find and read out the best local price.
 
-#### Scenario 5: Autonomous Multilingual UI Switching
+#### Scenario 6: Autonomous Multilingual UI Switching
 *   **Action:** Speak to the agent in Spanish (e.g., *"Hola, ¿puedes ayudarme a comprar comida?"*) or French.
 *   **Expected Result:** The agent will detect the language change, respond in that language, and autonomously trigger the `onSetAppLanguage` tool to instantly translate the entire application's UI text to match your spoken language.
 
