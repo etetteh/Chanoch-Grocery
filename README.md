@@ -46,65 +46,10 @@ The agent operates on a robust, multi-layered architecture:
 5. **Output**: The agent responds with natural, synthesized voice (audio streaming) and executes UI updates simultaneously.
 
 ## 🏗️ Architecture Diagram
-```mermaid
-graph TD
-    subgraph Client [User Device / Browser]
-        User((User))
-        UI[React Frontend\nUI Navigator]
-        Camera[Camera / Screen Share]
-        Mic[Microphone]
-        Speaker[Speaker]
-        LocalStorage[(Local Storage)]
-        GeoLocation[Browser Geolocation]
-    end
 
-    subgraph GoogleCloud [Google Cloud Run Container]
-        AppServer[Express + Vite Server\nPort 3000]
-    end
+![Architecture Diagram](/architecture.png)
 
-    subgraph GeminiAPIs [Google GenAI Services]
-        GeminiLive[Gemini 2.5 Flash Native Audio\nLive API WebSocket]
-        GeminiFlash[Gemini 3.1 Flash / Lite\nREST API]
-    end
-
-    subgraph External [External Services]
-        Internet[(Live Web Data)]
-    end
-
-    User <-->|Voice| Mic
-    User <-->|Screen/Video| Camera
-    User <-->|Clicks/Scrolls| UI
-    Speaker -->|Audio Playback| User
-
-    Mic -->|Audio PCM| UI
-    Camera -->|Base64 JPEG Frames| UI
-    GeoLocation -->|GPS Coordinates| UI
-    UI <-->|Save/Load State| LocalStorage
-
-    UI <-->|HTTPS: Serves App| AppServer
-
-    UI <-->|WebSocket: Audio/Video/Text| GeminiLive
-    
-    UI -->|Context: Location, List, Profile, Meal Plan| GeminiLive
-
-    %% Direct Grounding for Live API (Recently Added)
-    GeminiLive -->|Tool Call: googleSearch| Internet
-    Internet -->|Search Results| GeminiLive
-
-    %% Tool Calls to UI (State & Navigation)
-    GeminiLive -->|UI Control: navigateTab, scroll, highlight, setLanguage| UI
-    GeminiLive -->|Data Control: addItem, updateProfile, manageMealPlan| UI
-    
-    %% Delegated Tasks to REST APIs (Reasoning & Deep Search)
-    GeminiLive -->|Tool Call: searchSales, generateMealPlan| UI
-    UI -->|REST API| GeminiFlash
-    GeminiFlash -->|Web Search| Internet
-    GeminiFlash -->|JSON Results| UI
-    UI -->|Function Response| GeminiLive
-
-    GeminiLive -->|Audio PCM Response| UI
-    UI -->|Playback| Speaker
-```
+*Note: Please ensure the image is uploaded to the `public` folder as `architecture.png`.*
 
 ## 🆕 Recent Updates & Fixes
 ### Recent Enhancements
