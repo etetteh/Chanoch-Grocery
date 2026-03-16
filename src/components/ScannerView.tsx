@@ -79,6 +79,11 @@ export default function ScannerView({ profile, scanTrigger = 0 }: Props) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      setError('Camera not ready. Please try again.');
+      return;
+    }
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     

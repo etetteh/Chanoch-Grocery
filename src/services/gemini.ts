@@ -247,18 +247,19 @@ Before responding, verify:
 
     const response = await getAIClient().models.generateContent({
       model: MODEL.PRO,
-      contents: [
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: imageBase64.split(",")[1] ?? imageBase64,
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: imageBase64.split(",")[1] ?? imageBase64,
+            },
           },
-        },
-        { text: "Analyse this grocery item based on my health profile." },
-      ],
+          { text: "Analyse this grocery item based on my health profile." },
+        ],
+      },
       config: {
         systemInstruction,
-        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

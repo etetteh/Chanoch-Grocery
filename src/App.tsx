@@ -1642,8 +1642,10 @@ export default function App() {
                 return `Successfully ${expand ? 'expanded' : 'collapsed'} day ${dayIndex + 1}.`;
               }}
               onOpenMeal={(dayIndex, type) => {
-                if (mealPlan && mealPlan.days && mealPlan.days[dayIndex] && mealPlan.days[dayIndex][type]) {
-                  setSelectedMeal({ dayIndex, type, meal: mealPlan.days[dayIndex][type]! });
+                const dIndex = Number(dayIndex);
+                const mType = type.toLowerCase() as 'breakfast' | 'lunch' | 'dinner' | 'snack';
+                if (mealPlan && mealPlan.days && mealPlan.days[dIndex] && mealPlan.days[dIndex][mType]) {
+                  setSelectedMeal({ dayIndex: dIndex, type: mType, meal: mealPlan.days[dIndex][mType]! });
                   setActiveTab('meal-plan');
                   return "Meal opened successfully.";
                 }
