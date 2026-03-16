@@ -58,21 +58,36 @@ export interface Meal {
   name: string;
   description?: string;
   ingredients: string[];
-  recipe: string;
+  recipe?: string;
   prepNotes?: string;
   macros?: {
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
+    fiber?: number;
+    sugar?: number;
   };
   cuisine?: string;
   tags?: string[];
+  prepTimeMinutes?: number;
+  cookTimeMinutes?: number;
+  usesGroceries?: string[];
 }
 
 export interface MealPlanDay {
   day: string;
   date?: string;
+  meals?: {
+    breakfast?: Meal;
+    lunch?: Meal;
+    dinner?: Meal;
+    snack?: Meal;
+  };
+  dailyTotals?: {
+    calories: number;
+  };
+  // Legacy flat shape fallback
   breakfast?: Meal;
   lunch?: Meal;
   dinner?: Meal;
@@ -83,6 +98,14 @@ export interface MealPlan {
   days: MealPlanDay[];
   estimatedCost?: number;
   budgetWarning?: string;
+  error?: string;
+  warnings?: string[];
+  servings?: number;
+  planSummary?: {
+    avgDailyCalories: number;
+    avgDailyProtein: number;
+    groceriesUsed?: string[];
+  };
 }
 
 export type Tab = 'search' | 'list' | 'profile' | 'scanner' | 'meal-plan';
