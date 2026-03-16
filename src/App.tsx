@@ -1559,24 +1559,16 @@ export default function App() {
                   dislikedIngredients: dislikedIngredients !== undefined ? dislikedIngredients : prev.dislikedIngredients
                 }));
               }}
-              onGenerateMealPlan={async (days, budget, people, preferences) => {
-                if (budget !== undefined && budget < 0) {
-                  return "Failed to generate meal plan. The budget cannot be negative.";
-                }
+              onGenerateMealPlan={async (days, people, preferences) => {
                 if (groceryList.length === 0 && (!preferences || !preferences.trim())) {
                   return "Failed to generate meal plan. The user's grocery list is empty and no preferences were provided. Please ask the user what kind of meals they want or to add items to their list first.";
                 }
                 try {
-                  const plan = await generateMealPlan(groceryList, healthProfile, days, budget, people, preferences);
+                  const plan = await generateMealPlan(groceryList, healthProfile, days, people, preferences);
                   if (plan) {
                     setMealPlan(plan);
                     setActiveTab('meal-plan');
                     let msg = `Successfully generated a ${days}-day meal plan${people ? ` for ${people} people` : ''}. I've opened the meal plan view for you.`;
-                    if (plan.budgetWarning) {
-                      msg += ` WARNING: ${plan.budgetWarning}`;
-                    } else if (plan.estimatedCost) {
-                      msg += ` The estimated cost is $${plan.estimatedCost}.`;
-                    }
                     return msg;
                   }
                   return "Failed to generate meal plan.";

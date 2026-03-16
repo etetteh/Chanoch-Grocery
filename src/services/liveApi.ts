@@ -37,7 +37,7 @@ export async function connectToLive(callbacks: {
   onSearchSales?: (query: string, store?: string) => Promise<string>;
   onSearchAndAddMultipleItems?: (items: string[]) => Promise<string>;
   onUpdateProfile?: (dietTypes?: string[], allergies?: string[], goals?: string[], dislikedIngredients?: string[]) => void;
-  onGenerateMealPlan?: (days: number, budget?: number, people?: number, preferences?: string) => Promise<string>;
+  onGenerateMealPlan?: (days?: number, people?: number, preferences?: string) => Promise<string>;
   // Generates exactly one authentic recipe for a named dish + slot.
   // LiveAssistant.tsx must wire this to generateSingleMeal() from gemini.ts,
   // serialize the Meal result as JSON.stringify(meal), and return the string.
@@ -151,11 +151,12 @@ You have access to several tools. Use them appropriately based on the user's req
    | User intent | Correct tool |
    |---|---|
    | Named dish + specific day + specific slot (e.g. "add Ghanaian fufu for Tuesday lunch") | 'generateSingleMeal' then 'addMealToPlan' |
+   | "Create a meal plan for Ghanaian fufu for lunch on Tuesday" | 'generateSingleMeal' then 'addMealToPlan' |
    | "Suggest something for Tuesday lunch" (no dish named) | 'generateSingleMeal' then 'addMealToPlan' |
    | "Generate a full week meal plan" / "Create a meal plan for N days" | 'generateMealPlan' |
    | "Add all ingredients from the plan to my list" | 'searchAndAddMultipleItems' |
 
-   CRITICAL: If the user names a specific dish AND specifies a day and slot, you MUST call 'generateSingleMeal' — NEVER 'generateMealPlan'. Calling 'generateMealPlan' overwrites the entire existing plan with random dishes across all days, which is NOT what the user wants.
+   CRITICAL: If the user names a specific dish AND specifies a day and slot, you MUST call 'generateSingleMeal' — NEVER 'generateMealPlan'. This applies EVEN IF the user starts their sentence with "Create a meal plan for...". Calling 'generateMealPlan' overwrites the entire existing plan with random dishes across all days, which is NOT what the user wants.
 
    'generateSingleMeal': Generates one complete, authentic recipe for the exact dish the user named. After it resolves, immediately call 'addMealToPlan' with the result and the correct dayIndex from the DAY INDEX SCHEDULE table.
 
@@ -198,6 +199,7 @@ When you first connect or start a conversation, you MUST always introduce yourse
 </Greeting>
 `,
       tools: [
+        { googleSearch: {} },
         {
           functionDeclarations: [
             {
@@ -305,17 +307,15 @@ Use simplified product queries for faster results: prefer 'milk 2L' over 'cheape
               name: "generateMealPlan",
               description: `Generates a COMPLETE NEW multi-day meal plan that replaces the entire current plan.
 ONLY call this for explicit full-plan requests like "generate a meal plan for the week" or "create a 5-day plan".
-NEVER call this when the user asks for a specific dish on a specific day and slot — use 'generateSingleMeal' for that.
+NEVER call this when the user asks for a specific dish on a specific day and slot (e.g. "Create a meal plan for Ghanaian fufu for lunch on Tuesday") — use 'generateSingleMeal' for that.
 If the grocery list is empty and no preferences are given, ask the user for preferences first.`,
               parameters: {
                 type: Type.OBJECT,
                 properties: {
-                  days: { type: Type.INTEGER, description: "Number of days for the meal plan (e.g., 3, 5, 7)" },
-                  budget: { type: Type.NUMBER, description: "Optional budget limit in dollars (e.g., 150). Must be a positive number." },
+                  days: { type: Type.INTEGER, description: "Optional number of days for the meal plan (e.g., 3, 5, 7). If omitted, defaults to 1 day." },
                   people: { type: Type.INTEGER, description: "Optional number of people the meal plan is for (e.g., 2)" },
                   preferences: { type: Type.STRING, description: "Optional specific preferences (e.g., 'high protein', 'low carb')" }
-                },
-                required: ["days"]
+                }
               }
             },
             {
@@ -721,9 +721,9 @@ If the user's requested day is not in the schedule table, inform them instead of
               responses.push({ name: fc.name, id: fc.id, response: { result: `Generating ${mealName} recipe. Please let the user know this will take a moment.` } });
 
             } else if (fc.name === "generateMealPlan") {
-              const { days, budget, people, preferences } = fc.args as { days: number; budget?: number; people?: number; preferences?: string };
-              callbacks.onTranscription(`Generating a ${days}-day meal plan...`, false);
-              callbacks.onGenerateMealPlan?.(days, budget, people, preferences)
+              const { days, people, preferences } = fc.args as { days?: number; people?: number; preferences?: string };
+              callbacks.onTranscription(`Generating a ${days || 1}-day meal plan...`, false);
+              callbacks.onGenerateMealPlan?.(days, people, preferences)
                 .then(result => {
                   let ingredientBlock = '';
                   try {

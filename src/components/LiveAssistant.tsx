@@ -64,8 +64,7 @@ interface Props {
     dislikedIngredients?: string[],
   ) => void;
   onGenerateMealPlan?: (
-    days: number,
-    budget?: number,
+    days?: number,
     people?: number,
     preferences?: string,
   ) => Promise<string>;
@@ -506,11 +505,10 @@ export default function LiveAssistant({
               );
             }
           },
-          onGenerateMealPlan: async (days, budget, people, preferences) => {
+          onGenerateMealPlan: async (days, people, preferences) => {
             if (callbacksRef.current.onGenerateMealPlan) {
               return await callbacksRef.current.onGenerateMealPlan(
                 days,
-                budget,
                 people,
                 preferences,
               );

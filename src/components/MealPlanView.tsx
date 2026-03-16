@@ -33,8 +33,6 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
   const { t } = useTranslation();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState<number>(7);
-  const [budget, setBudget] = useState<string>('');
   const [preferences, setPreferences] = useState<string>('');
   
   const [addingMeal, setAddingMeal] = useState<{ dayIndex: number, type: MealType } | null>(null);
@@ -64,17 +62,11 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
       return;
     }
 
-    const parsedBudget = budget ? parseFloat(budget) : undefined;
-    if (parsedBudget !== undefined && parsedBudget < 0) {
-      setError('Budget cannot be negative.');
-      return;
-    }
-
     setIsGenerating(true);
     setError(null);
 
     try {
-      const plan = await generateMealPlan(safeGroceries, profile, days, parsedBudget, undefined, preferences.trim() || undefined);
+      const plan = await generateMealPlan(safeGroceries, profile, undefined, undefined, preferences.trim() || undefined);
       if (plan && plan.days && plan.days.length > 0) {
         setMealPlan(plan);
       } else {
@@ -206,13 +198,6 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
               className="w-48 sm:w-64 h-11 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-emerald-500"
             />
           )}
-          <Select
-            value={days}
-            onChange={(val) => setDays(Number(val))}
-            disabled={isGenerating}
-            options={[1, 2, 3, 4, 5, 6, 7].map(d => ({ value: d, label: `${d} ${t('meal_days')}` }))}
-            className="w-32"
-          />
           {mealPlan && (
             <div className="flex items-center gap-2">
               <Button
@@ -248,15 +233,6 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
           </p>
           
           <div className="max-w-md mx-auto mb-8 space-y-4">
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              placeholder={t('meal_budget_placeholder')}
-              className="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus-visible:ring-emerald-500"
-            />
             <Textarea
               value={preferences}
               onChange={(e) => setPreferences(e.target.value)}
@@ -286,24 +262,6 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
 
       {mealPlan && !isGenerating && (
         <div className="space-y-4">
-          {(mealPlan.estimatedCost || mealPlan.budgetWarning) && (
-            <div className={cn(
-              "p-4 rounded-2xl mb-6 flex items-start gap-3",
-              mealPlan.budgetWarning 
-                ? "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800/30" 
-                : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/30"
-            )}>
-              <Info className={cn("w-5 h-5 shrink-0 mt-0.5", mealPlan.budgetWarning ? "text-red-500" : "text-emerald-500")} />
-              <div>
-                {mealPlan.estimatedCost && (
-                  <p className="font-bold text-lg mb-1">Estimated Cost: ${mealPlan.estimatedCost.toFixed(2)}</p>
-                )}
-                {mealPlan.budgetWarning && (
-                  <p className="text-sm leading-relaxed">{mealPlan.budgetWarning}</p>
-                )}
-              </div>
-            </div>
-          )}
           {mealPlan.days?.map((day, index) => {
             const isToday = index === 0; // Assuming first day is today for this example
             const isExpanded = expandedDays[index];
@@ -332,7 +290,7 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
                   </div>
                   <div className="flex items-center gap-4 text-gray-600 dark:text-gray-400">
                     <span className="text-sm font-medium">
-                      {[day.breakfast, day.lunch, day.dinner, day.snack].filter(Boolean).length}/4 meals
+                      {[day.breakfast, day.lunch, day.dinner, day.snack].filter(Boolean).length} planned
                     </span>
                     {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                   </div>
@@ -364,7 +322,7 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
       {/* Add Meal Modal */}
       <AnimatePresence>
         {addingMeal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -462,14 +420,14 @@ export default function MealPlanView({ groceries, profile, mealPlan, setMealPlan
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedMeal(null)}
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+              className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#FDFBF7] dark:bg-gray-900 shadow-2xl border-l border-[#EAE5D9] dark:border-gray-800 flex flex-col text-[#4A4238] dark:text-gray-200 overflow-hidden"
+              className="fixed inset-y-0 right-0 z-[110] w-full max-w-md bg-[#FDFBF7] dark:bg-gray-900 shadow-2xl border-l border-[#EAE5D9] dark:border-gray-800 flex flex-col text-[#4A4238] dark:text-gray-200 overflow-hidden"
             >
               <div className="p-8 pb-4 flex items-start justify-between shrink-0">
                 <div className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#9A8B71] dark:text-gray-400 mt-2">

@@ -114,7 +114,7 @@ export async function analyzeGroceryItem(imageBase64: string, profile: HealthPro
   try {
     // Flash Lite is appropriate here — single-image classification with a well-defined
     // schema. No price verification or multi-step reasoning needed.
-    const model = "gemini-3.1-flash-lite-preview";
+    const model = "gemini-3.1-pro-preview";
 
     const profileContext = `
       Diet Types: ${profile.dietTypes?.join(', ') || 'None'}
@@ -147,6 +147,7 @@ export async function analyzeGroceryItem(imageBase64: string, profile: HealthPro
       ],
       config: {
         systemInstruction,
+        tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -178,9 +179,9 @@ export async function analyzeGroceryItem(imageBase64: string, profile: HealthPro
   }
 }
 
-export async function generateMealPlan(groceries: GroceryItem[], profile: HealthProfile, days: number = 3, budget?: number, people?: number, preferences?: string): Promise<MealPlan | null> {
+export async function generateMealPlan(groceries: GroceryItem[], profile: HealthProfile, days?: number, people?: number, preferences?: string): Promise<MealPlan | null> {
   try {
-    const model = "gemini-3.1-flash-preview";
+    const model = "gemini-3.1-pro-preview";
 
     const profileContext = `
       Diet Types: ${profile.dietTypes?.join(', ') || 'None'}
@@ -196,13 +197,14 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
 
     const systemInstruction = `You are an expert meal planner and nutritionist.
     STRICT TOPIC ENFORCEMENT: You MUST only generate meal plans related to food, diet, and nutrition. If the user's preferences or request are completely unrelated to food or meal planning, you MUST return an empty meal plan or refuse the request.
-    Today is ${currentDay}. Start the meal plan from today.
-    Create a ${days}-day meal plan based on the user's health profile.
+    Today is ${currentDay}. Start the meal plan from today unless the user specifies a different day.
+    Create a meal plan based on the user's health profile. 
+    CRITICAL TIMEFRAME RULE: If the user specifies a number of days or a specific target day in their preferences (e.g., "Tuesday"), you MUST generate the plan ONLY for that exact timeframe or day. Do not generate extra days that the user did not ask for. ${days ? `If no timeframe is specified, default to a ${days}-day meal plan.` : `If no timeframe is specified, default to a 1-day meal plan.`}
+    CRITICAL SNACK RULE: Do NOT generate a snack for any day unless the user explicitly requests a snack in their preferences. The user should choose their own snack.
     ${safeGroceries.length > 0 ? "Try to utilize the provided groceries as much as possible, but you can assume basic pantry staples (oil, salt, pepper, basic spices) are available." : "The user's grocery list is currently empty. Generate a meal plan, and the user will purchase the necessary ingredients later."}
     
     ${people ? `The meal plan is for ${people} people.` : ''}
-    ${budget ? `The total budget for the meal plan is $${budget}. You MUST use the googleSearch tool to check current market prices for the ingredients you are suggesting. Calculate the total estimated cost of all ingredients required for this meal plan. If the total estimated cost exceeds the user's budget of $${budget}, you MUST provide a 'budgetWarning' explaining which items are driving up the cost and suggesting cheaper alternatives.` : 'You MUST use the googleSearch tool to check current market prices for the ingredients you are suggesting and calculate the total estimated cost.'}
-    ${preferences ? `Specific preferences: ${preferences}` : ''}
+    ${preferences ? `Specific preferences: ${preferences}\n    CRITICAL: You MUST strictly follow these specific preferences. If the user asks for a specific dish on a specific day or meal slot, you MUST include that exact dish in the corresponding slot of the meal plan. Do not ignore their specific requests.` : ''}
     
     User's Health Profile:
     ${profileContext}
@@ -236,14 +238,11 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
 
     const response = await getAIClient().models.generateContent({
       model,
-      contents: `Generate a ${days}-day meal plan.`,
+      contents: `Generate a meal plan.`,
       config: {
         systemInstruction,
         tools: [{ googleSearch: {} }],
-        // Budget-constrained plans require multi-step: search prices → sum costs →
-        // compare budget → substitute. LOW thinking drops steps 2-4. HIGH when
-        // budget is specified; MEDIUM otherwise for solid nutritional reasoning.
-        thinkingConfig: { thinkingLevel: budget ? ThinkingLevel.HIGH : ThinkingLevel.MEDIUM },
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MEDIUM },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -258,13 +257,16 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
                   breakfast: mealSchema,
                   lunch: mealSchema,
                   dinner: mealSchema,
-                  snack: mealSchema
+                  snack: {
+                    type: Type.OBJECT,
+                    description: "Only include a snack if the user explicitly requested one. Otherwise, leave this null or omitted.",
+                    properties: mealSchema.properties,
+                    required: mealSchema.required
+                  }
                 },
                 required: ["day"]
               }
-            },
-            estimatedCost: { type: Type.NUMBER, description: "The total estimated cost of all ingredients required for the meal plan based on current market prices." },
-            budgetWarning: { type: Type.STRING, description: "If the estimatedCost exceeds the user's budget, provide a warning message explaining why and suggesting cheaper alternatives." }
+            }
           },
           required: ["days"]
         }
@@ -301,7 +303,7 @@ export async function generateSingleMeal(
   additionalNotes?: string
 ): Promise<Meal | null> {
   try {
-    const model = "gemini-3.1-flash-preview";
+    const model = "gemini-3.1-pro-preview";
 
     const safeGroceries = groceries || [];
     const groceryList = safeGroceries.map(g => `${g.quantity}x ${g.name}`).join(', ');
@@ -340,6 +342,7 @@ Recipe instructions must be step-by-step and detailed enough to actually cook th
       contents: `Generate a complete recipe for: ${mealName}`,
       config: {
         systemInstruction,
+        tools: [{ googleSearch: {} }],
         // MEDIUM thinking ensures authentic recipes, correct macro calculations,
         // and ingredient quantities. LOW produces wrong calorie counts and
         // generic dishes that ignore the cultural specificity of the request.
@@ -402,7 +405,7 @@ Recipe instructions must be step-by-step and detailed enough to actually cook th
 }
 
 export async function searchSales(query: string, store?: string, category?: string, lat?: number, lng?: number, accuracy?: number, postalCode?: string): Promise<SaleItem[]> {
-  const model = "gemini-3.1-flash-lite-preview";
+  const model = "gemini-3.1-pro-preview";
 
   const sanitizedQuery = sanitizePromptInput(query);
   const sanitizedStore = store ? sanitizePromptInput(store, 50) : undefined;
@@ -549,7 +552,7 @@ Do NOT include stores that do not operate in that region (e.g., do not include C
       // Simple regional availability check — flash-lite is appropriate here.
       // Single-step (does chain X operate in region Y?), no price verification,
       // no multi-hop reasoning. LOW thinking keeps cold-start latency minimal.
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-3.1-pro-preview",
       contents: userPrompt,
       config: {
         systemInstruction,
