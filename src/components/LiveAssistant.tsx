@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Mic,
+  MicOff,
   X,
   Loader2,
   Camera,
@@ -10,6 +11,9 @@ import {
   AlertCircle,
   Monitor,
   SwitchCamera,
+  Pause,
+  Play,
+  MoreVertical,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { clsx, type ClassValue } from "clsx";
@@ -144,10 +148,25 @@ export default function LiveAssistant({
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [highlights, setHighlights] = useState<
     { x: number; y: number; label?: string; id: number }[]
   >([]);
   const sessionRef = useRef<LiveSession | null>(null);
+  const isPausedRef = useRef(isPaused);
+  const audioQueue = useRef<string[]>([]);
+  const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+    if (isPaused) {
+      audioQueue.current = [];
+      if (currentAudioSourceRef.current) {
+        currentAudioSourceRef.current.stop();
+        currentAudioSourceRef.current = null;
+      }
+    }
+  }, [isPaused]);
 
   // Use refs for callbacks to avoid stale closures in the live session
   const callbacksRef = useRef({
@@ -280,9 +299,7 @@ export default function LiveAssistant({
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const barRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const audioQueue = useRef<string[]>([]);
   const isPlaying = useRef(false);
-  const currentAudioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const isMountedRef = useRef(true);
   const isVideoIntendedRef = useRef(initialVideoEnabled);
@@ -349,6 +366,7 @@ export default function LiveAssistant({
       const sessionPromise = connectToLive(
         {
           onAudio: (base64) => {
+            if (isPausedRef.current) return;
             audioQueue.current.push(base64);
             if (!isPlaying.current) playNextInQueue();
           },
@@ -702,6 +720,7 @@ export default function LiveAssistant({
       processorRef.current = processor;
 
       processor.onaudioprocess = (e) => {
+        if (isPausedRef.current) return;
         const inputData = e.inputBuffer.getChannelData(0);
         const pcmData = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
@@ -1085,24 +1104,24 @@ export default function LiveAssistant({
       aria-modal="true"
       aria-labelledby="voice-assistant-title"
       className={cn(
-        "relative bg-black text-white flex flex-col overflow-hidden shadow-2xl shadow-brand-500/20 border border-white/10 pointer-events-auto",
+        "relative bg-black text-white flex flex-col shadow-2xl shadow-brand-500/20 border border-white/10 pointer-events-auto",
         !isMinimized && "max-h-[70vh]",
       )}
     >
       {/* Video Background (Astra Immersive View) */}
       {(isVideoEnabled || isScreenSharing) && (
-        <>
+        <div className="absolute inset-0 overflow-hidden rounded-[inherit] z-0">
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            className={`absolute inset-0 w-full h-full object-cover z-0 ${facingMode === "user" ? "scale-x-[-1]" : ""}`}
+            className={`absolute inset-0 w-full h-full object-cover ${facingMode === "user" ? "scale-x-[-1]" : ""}`}
           />
           {isVideoEnabled && (
             <>
               {/* Viewfinder Overlay */}
-              <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center p-8">
+              <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-8">
                 <div className="w-full h-full max-w-sm max-h-[60vh] border-2 border-white/20 rounded-[2rem] relative">
                   {/* Corner Accents */}
                   <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-brand-500 rounded-tl-[2rem]" />
@@ -1144,16 +1163,16 @@ export default function LiveAssistant({
               ))}
             </AnimatePresence>
           </div>
-        </>
+        </div>
       )}
 
       {/* Atmospheric Background (when video is off) */}
       {!isVideoEnabled && (
-        <>
-          <div className="absolute inset-0 atmosphere pointer-events-none z-0" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.05),transparent_70%)] pointer-events-none z-0" />
+        <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none z-0">
+          <div className="absolute inset-0 atmosphere" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.05),transparent_70%)]" />
           {/* Animated Glow Orbs */}
-          <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none z-0">
+          <div className="absolute top-0 left-0 w-full h-full opacity-30">
             <motion.div
               animate={{
                 scale: [1, 1.2, 1],
@@ -1180,7 +1199,7 @@ export default function LiveAssistant({
               className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-500 rounded-full blur-[120px]"
             />
           </div>
-        </>
+        </div>
       )}
 
       {/* Hidden canvas element for frame capture */}
@@ -1273,6 +1292,18 @@ export default function LiveAssistant({
                   <SwitchCamera size={20} />
                 </Button>
               )}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsPaused(!isPaused)}
+                aria-label={isPaused ? "Resume voice assistant" : "Pause voice assistant"}
+                className={cn(
+                  "w-12 h-12 hover:scale-110 border-white/20 rounded-full transition-all active:scale-90 backdrop-blur-md outline-none text-white shadow-lg",
+                  isPaused ? "bg-red-500/40 hover:bg-red-500/60" : "bg-black/40 hover:bg-black/60"
+                )}
+              >
+                {isPaused ? <Play size={20} /> : <Pause size={20} />}
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
@@ -1439,8 +1470,10 @@ export default function LiveAssistant({
                           : "text-lg leading-relaxed min-h-[3rem]",
                       )}
                     >
-                      {transcription?.text ||
-                        (isVideoEnabled ? "Looking..." : "I'm listening...")}
+                      {isPaused
+                        ? "Paused..."
+                        : transcription?.text ||
+                          (isVideoEnabled ? "Looking..." : "I'm listening...")}
                     </p>
                   </div>
                 </div>
@@ -1524,22 +1557,36 @@ export default function LiveAssistant({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMinimized(false)}
-                className="w-8 h-8 bg-white/10 hover:bg-white/20 hover:scale-110 active:scale-90 rounded-full transition-all text-white"
-              >
-                <Maximize2 size={16} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="w-8 h-8 bg-red-500/20 hover:bg-red-500/40 hover:scale-110 active:scale-90 rounded-full transition-all text-red-200"
-              >
-                <X size={16} />
-              </Button>
+              <SpeedDial
+                direction="up"
+                align="right"
+                mainIcon={<MoreVertical size={16} />}
+                activeIcon={<X size={16} />}
+                buttonClassName="w-10 h-10 bg-white/10 hover:bg-white/20 hover:scale-110 active:scale-90 rounded-full transition-all text-white shadow-lg"
+                actionClassName="px-3 py-1.5 text-xs"
+                actions={[
+                  {
+                    name: isPaused ? "Resume" : "Pause",
+                    icon: isPaused ? <Play size={14} /> : <Pause size={14} />,
+                    onClick: () => setIsPaused(!isPaused),
+                    className: isPaused
+                      ? "!bg-red-500/40 !text-white hover:!bg-red-500/60"
+                      : "!bg-white/10 !text-white hover:!bg-white/20",
+                  },
+                  {
+                    name: "Maximize",
+                    icon: <Maximize2 size={14} />,
+                    onClick: () => setIsMinimized(false),
+                    className: "!bg-white/10 !text-white hover:!bg-white/20",
+                  },
+                  {
+                    name: "Close",
+                    icon: <X size={14} />,
+                    onClick: onClose,
+                    className: "!bg-red-500/20 !text-red-200 hover:!bg-red-500/40",
+                  },
+                ]}
+              />
             </div>
           </motion.div>
         )}
