@@ -1521,7 +1521,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-2xl pointer-events-none flex justify-end"
+            className="fixed bottom-[140px] sm:bottom-[164px] left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-2xl pointer-events-none flex justify-end"
           >
             <LiveAssistant 
               onClose={() => setIsLiveAssistantOpen(false)}
@@ -1680,7 +1680,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed bottom-44 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-2xl pointer-events-none flex justify-end"
+            className="fixed bottom-[140px] sm:bottom-[164px] left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-2xl pointer-events-none flex justify-end"
           >
             <button
               onClick={() => setIsLiveAssistantOpen(true)}
@@ -1844,7 +1844,7 @@ export default function App() {
             initial={{ opacity: 0, y: 50, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 50, x: '-50%' }}
-            className="fixed bottom-24 left-1/2 z-50 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10"
+            className="fixed bottom-[140px] sm:bottom-[164px] left-1/2 z-50 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10"
           >
             <motion.div animate={{ scale: [0, 1.2, 1] }} transition={{ duration: 0.3 }}><CheckCircle2 size={18} className="text-emerald-400" /></motion.div>
             <span className="text-sm font-bold tracking-tight">{t('list_copied')}</span>
