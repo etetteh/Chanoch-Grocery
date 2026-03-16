@@ -5,7 +5,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useTranslation } from 'react-i18next';
 import { debounce } from 'lodash';
-import { searchSales, generateMealPlan, filterStoresByLocation } from './services/gemini';
+import { searchSales, generateMealPlan, generateSingleMeal, filterStoresByLocation } from './services/gemini';
 import { SaleItem, GroceryItem, Tab, HealthProfile, MealPlan } from './types';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
@@ -959,7 +959,7 @@ export default function App() {
                   {Object.keys(salesGrouped).length > 0 && (
                     <div className="space-y-6">
                       <h2 className="font-display font-bold text-lg text-slate-800 dark:text-white">Sales Near You</h2>
-                      {Object.entries(salesGrouped).map(([key, items]) => {
+                      {Object.entries(salesGrouped).map(([key, items]: [string, SaleItem[]]) => {
                         const sortedItems = [...items].sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
                         const bestPrice = sortedItems[0].price;
                         return (
@@ -1068,7 +1068,7 @@ export default function App() {
                   {Object.keys(regularGrouped).length > 0 && (
                     <div className="space-y-6">
                       <h2 className="font-display font-bold text-lg text-slate-800 dark:text-white">Regular Near You</h2>
-                      {Object.entries(regularGrouped).map(([key, items]) => {
+                      {Object.entries(regularGrouped).map(([key, items]: [string, SaleItem[]]) => {
                         const sortedItems = [...items].sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
                         const bestPrice = sortedItems[0].price;
                         return (
@@ -1280,7 +1280,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-12">
-                  {Object.entries(listByStore).map(([store, items]) => (
+                  {Object.entries(listByStore).map(([store, items]: [string, GroceryItem[]]) => (
                     <div key={store} className="space-y-6">
                       <div className="flex items-center gap-4 px-2">
                         <div className="w-10 h-10 glass rounded-xl flex items-center justify-center text-brand-500">
@@ -1583,6 +1583,17 @@ export default function App() {
                 } catch (err) {
                   return "An error occurred while generating the meal plan.";
                 }
+              }}
+              onGenerateSingleMeal={ async (mealName, mealType, dayLabel, additionalNotes) => {
+                const meal = await generateSingleMeal(
+                  mealName,
+                  mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+                  dayLabel,
+                  groceryList,
+                  healthProfile,
+                  additionalNotes
+                );
+                return meal ? JSON.stringify(meal) : JSON.stringify({ error: "Failed to generate meal" });
               }}
               onAddMealToPlan={(dayIndex, type, meal) => {
                 let currentPlan = mealPlan;

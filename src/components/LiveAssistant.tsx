@@ -69,6 +69,12 @@ interface Props {
     people?: number,
     preferences?: string,
   ) => Promise<string>;
+  onGenerateSingleMeal?: (
+    mealName: string,
+    mealType: string,
+    dayLabel: string,
+    additionalNotes?: string,
+  ) => Promise<string>;
   onAddMealToPlan?: (
     dayIndex: number,
     type: "breakfast" | "lunch" | "dinner" | "snack",
@@ -110,6 +116,7 @@ export default function LiveAssistant({
   initialVideoEnabled = false,
   onUpdateProfile,
   onGenerateMealPlan,
+  onGenerateSingleMeal,
   onAddMealToPlan,
   onRemoveMealFromPlan,
   onUpdateMealInPlan,
@@ -149,6 +156,7 @@ export default function LiveAssistant({
     onClearList,
     onUpdateProfile,
     onGenerateMealPlan,
+    onGenerateSingleMeal,
     onAddMealToPlan,
     onRemoveMealFromPlan,
     onUpdateMealInPlan,
@@ -201,6 +209,7 @@ export default function LiveAssistant({
       onClearList,
       onUpdateProfile,
       onGenerateMealPlan,
+      onGenerateSingleMeal,
       onAddMealToPlan,
       onRemoveMealFromPlan,
       onUpdateMealInPlan,
@@ -507,6 +516,17 @@ export default function LiveAssistant({
               );
             }
             return "Meal plan generation not available.";
+          },
+          onGenerateSingleMeal: async (mealName, mealType, dayLabel, additionalNotes) => {
+            if (callbacksRef.current.onGenerateSingleMeal) {
+              return await callbacksRef.current.onGenerateSingleMeal(
+                mealName,
+                mealType,
+                dayLabel,
+                additionalNotes,
+              );
+            }
+            return "Single meal generation not available.";
           },
           onAddMealToPlan: async (dayIndex, type, meal) => {
             if (callbacksRef.current.onAddMealToPlan) {
