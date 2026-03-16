@@ -405,7 +405,7 @@ Recipe instructions must be step-by-step and detailed enough to actually cook th
 }
 
 export async function searchSales(query: string, store?: string, category?: string, lat?: number, lng?: number, accuracy?: number, postalCode?: string): Promise<SaleItem[]> {
-  const model = "gemini-3.1-pro-preview";
+  const model = "gemini-3-flash-preview";
 
   const sanitizedQuery = sanitizePromptInput(query);
   const sanitizedStore = store ? sanitizePromptInput(store, 50) : undefined;
@@ -534,6 +534,18 @@ export async function filterStoresByLocation(
 ): Promise<{ name: string; logo: string }[]> {
   if (!lat && !lng && !postalCode) return stores;
 
+  const roundedLat = lat ? lat.toFixed(2) : undefined;
+  const roundedLng = lng ? lng.toFixed(2) : undefined;
+  const cacheKey = `filterStoresCache_${roundedLat},${roundedLng},${postalCode}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+
   const systemInstruction = `You are a helpful assistant that determines which grocery store chains operate in a specific location.
 You will be given a list of grocery store chains and a user's location.
 Return a JSON array containing ONLY the names of the stores from the provided list that actually have physical locations in or near the user's area.
@@ -552,12 +564,11 @@ Do NOT include stores that do not operate in that region (e.g., do not include C
       // Simple regional availability check — flash-lite is appropriate here.
       // Single-step (does chain X operate in region Y?), no price verification,
       // no multi-hop reasoning. LOW thinking keeps cold-start latency minimal.
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: userPrompt,
       config: {
         systemInstruction,
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -575,7 +586,15 @@ Do NOT include stores that do not operate in that region (e.g., do not include C
     }
 
     const validNamesLower = validStoreNames.map(n => n.toLowerCase());
-    return stores.filter(store => validNamesLower.includes(store.name.toLowerCase()));
+    const filteredStores = stores.filter(store => validNamesLower.includes(store.name.toLowerCase()));
+    
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(filteredStores));
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+    
+    return filteredStores;
   } catch (e) {
     console.error("Filter stores API error:", e);
     return stores; // Fallback to all stores on error
