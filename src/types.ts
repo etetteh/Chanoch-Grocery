@@ -81,6 +81,8 @@ export interface MealPlanDay {
 
 export interface MealPlan {
   days: MealPlanDay[];
+  estimatedCost?: number;
+  budgetWarning?: string;
 }
 
 export type Tab = 'search' | 'list' | 'profile' | 'scanner' | 'meal-plan';

@@ -1559,12 +1559,12 @@ export default function App() {
                   dislikedIngredients: dislikedIngredients !== undefined ? dislikedIngredients : prev.dislikedIngredients
                 }));
               }}
-              onGenerateMealPlan={async (days, people, preferences) => {
+              onGenerateMealPlan={async (days, people, preferences, budget) => {
                 if (groceryList.length === 0 && (!preferences || !preferences.trim())) {
                   return "Failed to generate meal plan. The user's grocery list is empty and no preferences were provided. Please ask the user what kind of meals they want or to add items to their list first.";
                 }
                 try {
-                  const plan = await generateMealPlan(groceryList, healthProfile, days, people, preferences);
+                  const plan = await generateMealPlan(groceryList, healthProfile, days, people, preferences, budget);
                   if (plan) {
                     setMealPlan(plan);
                     setActiveTab('meal-plan');
@@ -1576,14 +1576,15 @@ export default function App() {
                   return "An error occurred while generating the meal plan.";
                 }
               }}
-              onGenerateSingleMeal={ async (mealName, mealType, dayLabel, additionalNotes) => {
+              onGenerateSingleMeal={ async (mealName, mealType, dayLabel, additionalNotes, budget) => {
                 const meal = await generateSingleMeal(
                   mealName,
                   mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
                   dayLabel,
                   groceryList,
                   healthProfile,
-                  additionalNotes
+                  additionalNotes,
+                  budget
                 );
                 return meal ? JSON.stringify(meal) : JSON.stringify({ error: "Failed to generate meal" });
               }}

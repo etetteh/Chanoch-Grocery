@@ -179,7 +179,7 @@ export async function analyzeGroceryItem(imageBase64: string, profile: HealthPro
   }
 }
 
-export async function generateMealPlan(groceries: GroceryItem[], profile: HealthProfile, days?: number, people?: number, preferences?: string): Promise<MealPlan | null> {
+export async function generateMealPlan(groceries: GroceryItem[], profile: HealthProfile, days?: number, people?: number, preferences?: string, budget?: number): Promise<MealPlan | null> {
   try {
     const model = "gemini-3.1-pro-preview";
 
@@ -204,6 +204,7 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
     ${safeGroceries.length > 0 ? "Try to utilize the provided groceries as much as possible, but you can assume basic pantry staples (oil, salt, pepper, basic spices) are available." : "The user's grocery list is currently empty. Generate a meal plan, and the user will purchase the necessary ingredients later."}
     
     ${people ? `The meal plan is for ${people} people.` : ''}
+    ${budget ? `CRITICAL BUDGET RULE: The user has a strict budget of $${budget}. You MUST estimate the cost of the ingredients needed for this meal plan. If the estimated cost exceeds the budget, you MUST provide a budgetWarning explaining why and suggesting cheaper alternatives.` : ''}
     ${preferences ? `Specific preferences: ${preferences}\n    CRITICAL: You MUST strictly follow these specific preferences. If the user asks for a specific dish on a specific day or meal slot, you MUST include that exact dish in the corresponding slot of the meal plan. Do not ignore their specific requests.` : ''}
     
     User's Health Profile:
@@ -247,6 +248,8 @@ export async function generateMealPlan(groceries: GroceryItem[], profile: Health
         responseSchema: {
           type: Type.OBJECT,
           properties: {
+            estimatedCost: { type: Type.NUMBER, description: "Estimated total cost of the meal plan" },
+            budgetWarning: { type: Type.STRING, description: "Warning if the estimated cost exceeds the budget, with suggestions for cheaper alternatives" },
             days: {
               type: Type.ARRAY,
               items: {
@@ -300,7 +303,8 @@ export async function generateSingleMeal(
   dayLabel: string,
   groceries: GroceryItem[],
   profile: HealthProfile,
-  additionalNotes?: string
+  additionalNotes?: string,
+  budget?: number
 ): Promise<Meal | null> {
   try {
     const model = "gemini-3.1-pro-preview";
@@ -324,6 +328,7 @@ If "${mealName}" is a specific cultural dish (e.g., Ghanaian fufu and groundnut 
 
 The meal is for ${mealType} on ${dayLabel}.
 ${additionalNotes ? `Additional notes from the user: ${additionalNotes}` : ''}
+${budget ? `CRITICAL BUDGET RULE: The user has a strict budget of $${budget} for this meal. You MUST estimate the cost of the ingredients needed. If the estimated cost exceeds the budget, you MUST provide a budgetWarning explaining why and suggesting cheaper alternatives in the prepNotes.` : ''}
 
 User's Health Profile:
 ${profileContext}

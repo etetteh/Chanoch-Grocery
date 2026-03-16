@@ -37,11 +37,11 @@ export async function connectToLive(callbacks: {
   onSearchSales?: (query: string, store?: string) => Promise<string>;
   onSearchAndAddMultipleItems?: (items: string[]) => Promise<string>;
   onUpdateProfile?: (dietTypes?: string[], allergies?: string[], goals?: string[], dislikedIngredients?: string[]) => void;
-  onGenerateMealPlan?: (days?: number, people?: number, preferences?: string) => Promise<string>;
+  onGenerateMealPlan?: (days?: number, people?: number, preferences?: string, budget?: number) => Promise<string>;
   // Generates exactly one authentic recipe for a named dish + slot.
   // LiveAssistant.tsx must wire this to generateSingleMeal() from gemini.ts,
   // serialize the Meal result as JSON.stringify(meal), and return the string.
-  onGenerateSingleMeal?: (mealName: string, mealType: string, dayLabel: string, additionalNotes?: string) => Promise<string>;
+  onGenerateSingleMeal?: (mealName: string, mealType: string, dayLabel: string, additionalNotes?: string, budget?: number) => Promise<string>;
   onAddMealToPlan?: (dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', meal: any) => Promise<string> | string;
   onRemoveMealFromPlan?: (dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack') => Promise<string> | string;
   onUpdateMealInPlan?: (dayIndex: number, type: 'breakfast' | 'lunch' | 'dinner' | 'snack', mealUpdates: any) => Promise<string> | string;
@@ -314,7 +314,8 @@ If the grocery list is empty and no preferences are given, ask the user for pref
                 properties: {
                   days: { type: Type.INTEGER, description: "Optional number of days for the meal plan (e.g., 3, 5, 7). If omitted, defaults to 1 day." },
                   people: { type: Type.INTEGER, description: "Optional number of people the meal plan is for (e.g., 2)" },
-                  preferences: { type: Type.STRING, description: "Optional specific preferences (e.g., 'high protein', 'low carb')" }
+                  preferences: { type: Type.STRING, description: "Optional specific preferences (e.g., 'high protein', 'low carb')" },
+                  budget: { type: Type.NUMBER, description: "Optional budget for the meal plan (e.g., 150)" }
                 }
               }
             },
@@ -347,6 +348,10 @@ After this tool resolves, you MUST immediately call 'addMealToPlan' with the ret
                   additionalNotes: {
                     type: Type.STRING,
                     description: "Optional: any extra context from the user such as serving size, dietary restrictions for this meal, or cooking method preferences"
+                  },
+                  budget: {
+                    type: Type.NUMBER,
+                    description: "Optional budget for this specific meal (e.g., 20)"
                   }
                 },
                 required: ["mealName", "mealType", "dayLabel"]
@@ -697,11 +702,11 @@ If the user's requested day is not in the schedule table, inform them instead of
               // requests here instead of generateMealPlan, which overwrites all 7 days.
               // This generates exactly one authentic recipe, then the model calls
               // addMealToPlan with the result and the correct dayIndex from the schedule.
-              const { mealName, mealType, dayLabel, additionalNotes } = fc.args as {
-                mealName: string; mealType: string; dayLabel: string; additionalNotes?: string;
+              const { mealName, mealType, dayLabel, additionalNotes, budget } = fc.args as {
+                mealName: string; mealType: string; dayLabel: string; additionalNotes?: string; budget?: number;
               };
               callbacks.onTranscription(`Generating recipe for ${mealName}...`, false);
-              callbacks.onGenerateSingleMeal?.(mealName, mealType, dayLabel, additionalNotes)
+              callbacks.onGenerateSingleMeal?.(mealName, mealType, dayLabel, additionalNotes, budget)
                 .then(result => {
                   resolvedSession?.sendClientContent({
                     turns: [{
@@ -721,9 +726,9 @@ If the user's requested day is not in the schedule table, inform them instead of
               responses.push({ name: fc.name, id: fc.id, response: { result: `Generating ${mealName} recipe. Please let the user know this will take a moment.` } });
 
             } else if (fc.name === "generateMealPlan") {
-              const { days, people, preferences } = fc.args as { days?: number; people?: number; preferences?: string };
+              const { days, people, preferences, budget } = fc.args as { days?: number; people?: number; preferences?: string; budget?: number };
               callbacks.onTranscription(`Generating a ${days || 1}-day meal plan...`, false);
-              callbacks.onGenerateMealPlan?.(days, people, preferences)
+              callbacks.onGenerateMealPlan?.(days, people, preferences, budget)
                 .then(result => {
                   let ingredientBlock = '';
                   try {

@@ -67,12 +67,14 @@ interface Props {
     days?: number,
     people?: number,
     preferences?: string,
+    budget?: number
   ) => Promise<string>;
   onGenerateSingleMeal?: (
     mealName: string,
     mealType: string,
     dayLabel: string,
     additionalNotes?: string,
+    budget?: number
   ) => Promise<string>;
   onAddMealToPlan?: (
     dayIndex: number,
@@ -505,23 +507,25 @@ export default function LiveAssistant({
               );
             }
           },
-          onGenerateMealPlan: async (days, people, preferences) => {
+          onGenerateMealPlan: async (days, people, preferences, budget) => {
             if (callbacksRef.current.onGenerateMealPlan) {
               return await callbacksRef.current.onGenerateMealPlan(
                 days,
                 people,
                 preferences,
+                budget
               );
             }
             return "Meal plan generation not available.";
           },
-          onGenerateSingleMeal: async (mealName, mealType, dayLabel, additionalNotes) => {
+          onGenerateSingleMeal: async (mealName, mealType, dayLabel, additionalNotes, budget) => {
             if (callbacksRef.current.onGenerateSingleMeal) {
               return await callbacksRef.current.onGenerateSingleMeal(
                 mealName,
                 mealType,
                 dayLabel,
                 additionalNotes,
+                budget
               );
             }
             return "Single meal generation not available.";
